@@ -39,13 +39,10 @@ def get_all_ids(table="cards")  -> list:
     return ids
 
 def get_free_id(table="cards") -> int:
-    ids = get_all_ids()
-    if len(ids) == 0:
-        return 1
-    ids.sort()
-    for id in ids:
-        if id+1 not in ids:
-            return id+1
+    cursor.execute("SELECT * FROM cards_stats")
+    lastid = cursor.fetchall()[0][0]
+    cursor.execute(f"UPDATE cards_stats SET lastid = {lastid+1} WHERE lastid = {lastid};")
+    return lastid+1
 
 def delete_all_cards(table="cards"):
     ids = get_all_ids()
