@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block head%}{% endblock %}
+
+{% block body%}
+<div style="padding-top: 60px;"></div>
+<div class="zone">
+    <div class="texte2">
+        <h3 class="nomargintop nomarginbot">Créer une carte !</h3>
+        <p><i>Les champs marqués avec des * sont obligatoires.</i></p>
+        <form action="" method="post" novalidate>
+            {{ form.hidden_tag() }}
+            <p>
+                {{ form.deck.label }}<br>
+                {{ form.deck(size=32, class_="cardform") }}
+            </p>
+            <p>
+                {{ form.front.label }}<br>
+                {{ form.front(size=32, class_="cardform") }}
+            </p>
+            <p>
+                {{ form.front_sub.label }}<br>
+                {{ form.front_sub(size=32, class_="cardform") }}
+            </p>
+            <p>
+                {{ form.back.label }}<br>
+                {{ form.back(size=32, class_="cardform") }}
+            </p>
+            <p>
+                {{ form.back_sub.label }}<br>
+                {{ form.back_sub(size=32, class_="cardform") }}
+            </p>
+            <p>
+                {{ form.back_sub2.label }}<br>
+                {{ form.back_sub2(size=32, class_="cardform") }}
+            </p>
+            <p>
+                {{ form.tag.label }}<br>
+                {{ form.tag(size=32, class_="cardform") }}
+            </p>
+            <p>{{ form.submit(class_="bouton bouton1 creerbouton") }}</p>
+        </form>
+    </div>
+</div>
+{% endblock %}

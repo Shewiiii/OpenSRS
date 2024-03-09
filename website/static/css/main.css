@@ -1,0 +1,243 @@
+@import url('https://fonts.googleapis.com/css?family=Poppins:700|Poppins:400');
+:root {
+  --text: #f5f5ff;
+  --background: #121118;
+  --primary: #6356c8;
+  --secondary: #7b71cc;
+  --secondary2: #161521;
+  --secondary3: #201e31;
+  --secondary4: #322E4F; /*bouton2 */
+  --accent: #513ac5;
+  --idkgraph: #312f42;
+}
+
+body {
+  font-family: 'Poppins';
+  font-weight: 400;
+  color: var(--text);
+  background-color: var(--background);
+  margin-left: 10%;
+  margin-right: 10%;
+}
+
+
+html {font-size: 100%;} /* 16px */
+
+h1 {font-size: 4.210rem; /* 67.36px */}
+
+h2 {font-size: 3.158rem; /* 50.56px */}
+
+h3 {font-size: 2.369rem; /* 37.92px */}
+
+h4 {font-size: 1.777rem; /* 28.48px */}
+
+h5 {font-size: 1.333rem; /* 21.28px */}
+
+small {font-size: 0.750rem; /* 12px */}
+
+.presentation {
+  padding-top: 25%;
+}
+
+
+.effet {
+  background: linear-gradient(to right, #6356c8, #434bea);
+  -webkit-text-fill-color: transparent; 
+  -webkit-background-clip: text; 
+  background-clip: text;
+}
+
+
+.hero {
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	width: 100%;
+	margin: 2rem 6rem;
+}
+
+.texte {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3em;
+  width: 600px;
+}
+
+.image {
+  width: 40%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+
+}
+
+@keyframes floating {
+  0% { transform: translate(0,  0px); }
+  50%  { transform: translate(0, 25px); }
+  100%   { transform: translate(0, -0px); }    
+}
+
+.anim {
+  animation-name: floating;
+  animation-duration: 3s;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+}
+
+
+svg {
+  max-width: 80%;
+}
+
+.separateur {
+  height: 50px;
+  width: 50px;
+  text-align: center;
+  margin: auto;
+}
+
+.bouton {
+  border-radius: 10px;
+  cursor: pointer;
+  align-self: center;
+  font-size: 17px;
+  padding: 15px;
+  text-align: center;
+  transition-duration: 0.2s;
+  margin: 0;
+  display: inline-block;
+  user-select: none;
+}
+
+.bouton1 {
+  color: var(--text);
+  background-color: var(--primary);
+}
+
+.bouton2 {
+  color: var(--text);
+  background-color: var(--secondary4);
+}
+
+
+.bouton:hover {
+  transform: translate(0, -3px);
+  box-shadow: 0 20px 80px -10px var(--primary);
+}
+
+.boutons {
+  display: flex;
+  flex-direction: row;
+  justify-content: left;
+  gap: 2em;
+  margin: 2rem 6rem;
+}
+
+.cards { 
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.card { 
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  text-align: center;
+  gap: 20px;
+  padding: 2em;
+  padding-top: 50px;
+  padding-bottom: 50px;
+
+  background-color: var(--secondary2);
+  border-radius: 15px;
+  width: 100%;
+  transition-property: opacity,margin-top;
+  transition-duration:  1s;
+  transition-timing-function: ease;
+  opacity: 0;
+  margin-top:100px;
+}
+
+.cardTitle {
+  margin-bottom: 0px;
+}
+
+
+.playground {
+  height: 450px;
+}
+
+.graph {
+  width: 100%;
+  text-align: center;
+  position: relative;
+  justify-content: center;
+  display: inline-block;
+}
+
+.hero2 {
+  width: 75%;
+  height: 1000px;
+  min-width: 700px;
+  margin: auto;
+  border-radius: 30px;
+  padding: 50px;
+  background-color: var(--secondary3);
+  text-align: center;
+  transition-property: opacity,margin-top;
+  transition-duration:  1s;
+  transition-timing-function: ease-in-out;
+  margin-top: 200px;
+  opacity: 0;
+}
+
+.playground2 {
+  height: 450px;
+
+}
+
+
+.visible {
+  opacity: 1;
+  margin-top: 0px;
+}
+.nomargintop {
+  margin-top: 0;
+} 
+.nomarginbot {
+  margin-bottom: 0;
+}
+
+.zone {
+  width: 55%;
+  min-width: 700px;
+  margin: auto;
+  border-radius: 30px;
+  padding: 50px;
+  background-color: var(--secondary2);
+}
+
+.cardform {
+  background-color: var(--secondary3);
+  appearance: none;
+  border-radius: 30px;
+  padding: 1% 2% 1% 2%;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  margin-right: 3%;
+  border: 0px;
+  color: #FFF;
+  font-family: Segoe UI Semibold;
+  font-size: 16px;
+  width: 96%;
+}
+
+.creerbouton {
+  border: 0;
+  font-family: 'Poppins';
+}

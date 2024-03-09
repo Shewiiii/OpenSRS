@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block head%}{% endblock %}
+
+{% block body%}
+<div id="presentation">
+    <h1>OpenSRS</h1>
+    <div class="hero">
+        <div class="texte">
+            <h3>
+                Le <span class="effet">SRS</span> avec le meilleur algorithme de
+                répétition espacée au monde, plus accessible que jamais.
+            </h3>
+            <p>
+                OpenSRS est la plateforme idéale pour apprendre, réviser et partager vos
+                connaissances aux autres internautes. Avec l'algorithme FSRS v4 intégré et
+                boosté par l'intelligence artificielle, ce dernier permet une efficacité
+                sans précédent.
+            </p>
+        </div>
+        <div class="image anim">
+            <svg viewBox="0 0 652 644" fill="none">
+                <rect x="80" y="68" width="335" height="324" rx="10" fill="var(--secondary)"></rect>
+                <rect x="60" y="98" width="335" height="324" rx="10" fill="var(--primary)"></rect>
+                <rect x="40" y="128" width="335" height="324" rx="10" fill="var(--accent)"></rect>
+            </svg>
+        </div>
+    </div>
+    <div class="boutons">
+        <a class="bouton bouton1">Essayez !</a>
+        <a class="bouton bouton2">Se connecter</a>
+    </div>
+    <div class="separateur">
+        <svg viewBox="0 0 100 50" fill="none">
+            <line x1="0" y1="0" x2="50" y2="50" style="stroke: rgb(255, 255, 255); stroke-width: 5px" />
+            <line x1="100" y1="0" x2="50" y2="50" style="stroke: rgb(255, 255, 255); stroke-width: 5px" />
+        </svg>
+    </div>
+</div>
+<div style="padding-top: 100px"></div>
+<h3 style="text-align: center">Pourquoi OpenSRS ?</h3>
+<div class="playground">
+    <div class="cards">
+        <div class="card card1">
+            <h4 class="cardTitle">Gratuit à vie.</h4>
+            <svg viewBox="0 0 60 5" fill="none">
+                <line x1="5" x2="55" y1="1" y2="1" style="stroke: var(--secondary); stroke-width: 1.5px"
+                    stroke-linecap="round" />
+            </svg>
+            <p>
+                Ce site a été développé avec amour par deux enthousiastes dans le cadre
+                du projet de NSI de terminale. Il est et restera open source.
+            </p>
+        </div>
+        <div class="card">
+            <h4 class="cardTitle">Simple d'utilisation.</h4>
+            <svg viewBox="0 0 60 5" fill="none">
+                <line x1="5" x2="55" y1="1" y2="1" style="stroke: var(--secondary); stroke-width: 1.5px"
+                    stroke-linecap="round" />
+            </svg>
+            <p>
+                Aucun logiciel à installer, créez simplement un compte et vous êtes prêt
+                à apprendre !
+            </p>
+        </div>
+        <div class="card">
+            <h4 class="cardTitle">Précis et moderne.</h4>
+            <svg viewBox="0 0 60 5" fill="none">
+                <line x1="5" x2="55" y1="1" y2="1" style="stroke: var(--secondary); stroke-width: 1.5px"
+                    stroke-linecap="round" />
+            </svg>
+            <p>
+                Ce site a été conçu minutieusement aussi bien du côté expérience
+                utilisateur que du côté programmation et implémentation du SRS.
+            </p>
+        </div>
+    </div>
+</div>
+<div class="separateur">
+    <svg viewBox="0 0 100 30" fill="none">
+        <line x1="15" y1="10" x2="85" y2="10" style="stroke: rgb(255, 255, 255); stroke-width: 20px ;"
+            stroke-linecap="round" />
+    </svg>
+</div>
+<div style="padding-top: 60px;"></div>
+<div class="hero2">
+    <div class="graph image">
+        <canvas class="myChart" aria-label="charte des SRS" role="image"></canvas>
+    </div>
+    <div class="texte2">
+        <h3>Une précision non-rivalisée.</h3>
+        <p>testestestestestest</p>
+        <p>testestestestestest</p>
+    </div>
+</div>
+
+<div style="padding-top: 1000px"></div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script src="../static/js/jquery.viewportchecker.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="../static/js/oui.js"></script>
+
+
+{% endblock %}
