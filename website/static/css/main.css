@@ -152,7 +152,6 @@ svg {
   padding: 2em;
   padding-top: 50px;
   padding-bottom: 50px;
-
   background-color: var(--secondary2);
   border-radius: 15px;
   width: 100%;
@@ -216,12 +215,22 @@ svg {
 .zone {
   width: 55%;
   min-width: 700px;
-  margin: auto;
+  margin-left: auto;
+  margin-right: auto;
   border-radius: 30px;
   padding: 50px;
   background-color: var(--secondary2);
 }
-
+.zone2 {
+  width: 20%;
+  min-width: 200px;
+  margin: auto;
+  margin-top: 0;
+  border-radius: 30px;
+  padding: 50px;
+  background-color: var(--secondary4);
+  text-align: center;
+}
 .cardform {
   background-color: var(--secondary3);
   appearance: none;
@@ -241,3 +250,8 @@ svg {
   border: 0;
   font-family: 'Poppins';
 }
+
+.OK {
+  color: #70ca99;
+}
+
