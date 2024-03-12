@@ -255,3 +255,10 @@ svg {
   color: #70ca99;
 }
 
+/* peut-être qu'il faudrait séparer en plusieurs feuilles de style css x) */
+
+.decklist {
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}

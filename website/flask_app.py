@@ -27,7 +27,10 @@ def cardform():
         return redirect('/formtest')
     return render_template('form.html',title='Créer une carte',form=form)
 
+@app.route('/decklist')
 
+def decklist():
+    return render_template('decklist.html', title='Liste de decks')
 
 
 
