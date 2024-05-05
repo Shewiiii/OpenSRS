@@ -21,9 +21,15 @@ def home(name):
 def cardform():
     form = Cardform()
     if form.validate_on_submit():
-        print(form.deck.data,form.front.data,form.front_sub.data,form.back.data,form.back_sub2.data,form.tag.data)
-        create_card(id=get_free_id(),deck=form.deck.data,front=form.front.data,front_sub=form.front_sub.data,back=form.back.data,back_sub=form.back_sub.data,back_sub2=form.back_sub2.data,tag=form.tag.data)
-        flash(f'La carte {form.front.data} a bien été enregistré dans le deck {form.deck.data} !')
+        deckid = form.deckid
+        front = form.front
+        front_sub = form.front_sub
+        back = form.back
+        back_sub = form.back_sub
+        back_sub2 = form.back_sub2
+        tag = form.tag
+        create_card(deckid, front, front_sub, back, back_sub, back_sub2, tag, user_id=1)
+        flash(f'La carte {form.front.data} a bien été enregistré dans le deck {form.deckid.data} !')
         return redirect('/formtest')
     return render_template('form.html',title='Créer une carte',form=form)
 
