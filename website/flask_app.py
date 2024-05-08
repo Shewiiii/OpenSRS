@@ -6,42 +6,65 @@ from app.manage_database import *
 app = Flask(__name__)
 app.config.from_object(Config)
 
-@app.route('/')
 
+@app.route('/')
 def index():
     return render_template('index.html')
 
-@app.route('/home/<name>')
 
+@app.route('/home/<name>')
 def home(name):
     return render_template('home.html', name=name)
 
-@app.route('/formtest', methods=['GET', 'POST'])
 
+@app.route('/formtest', methods=['GET', 'POST'])
 def cardform():
     form = Cardform()
     if form.validate_on_submit():
-        deckid = form.deckid
-        front = form.front
-        front_sub = form.front_sub
-        back = form.back
-        back_sub = form.back_sub
-        back_sub2 = form.back_sub2
-        tag = form.tag
-        create_card(deckid, front, front_sub, back, back_sub, back_sub2, tag, user_id=1)
-        flash(f'La carte {form.front.data} a bien été enregistré dans le deck {form.deckid.data} !')
+        deckid = form.deckid.data
+        front = form.front.data
+        front_sub = form.front_sub.data
+        back = form.back.data
+        back_sub = form.back_sub.data
+        back_sub2 = form.back_sub2.data
+        tag = form.tag.data
+        create_card(deckid, front, front_sub, back,
+                    back_sub, back_sub2, tag, user_id=1)
+        flash(f'La carte {form.front.data} a bien été enregistré dans le deck !')
         return redirect('/formtest')
-    return render_template('form.html',title='Créer une carte',form=form)
+    return render_template('form.html', title='Créer une carte', form=form)
+
 
 @app.route('/decklist')
-
 def decklist():
-    return render_template('decklist.html', title='Liste de decks')
+    decks = get_decks_from_user(user_id=1)
+    return render_template('decklist.html', title='Liste de decks', decks=decks)
 
 
+@app.route('/deck/<deck_id>')
+def deckPage(deck_id):
+    deckInfo, cards = get_deck_from_id(deck_id, Constants.temp_user_id)
+    '''Exemple de deck:
+    ({'deck_id': 0,
+      'name': 'name',
+      'description': 'description',
+      'created': datetime.datetime(2024, 5, 6, 0, 33, 4)},
 
-
-
-
-if __name__ == "__main__": #toujours à la fin!
+    [{'card_id': 1,
+      'front': 'je suis un front',
+      'front_sub': 'sous front',
+      'back': 'bacc',
+      'back_sub': 'sub bacc',
+      'back_sub2': 'sub bacc 2',
+      'tag': 'uwu'},
+    {'card_id': 2,
+      'front': 'oezjtoerjitger',
+      'front_sub': 'front_sub',
+      'back': 'back',
+      'back_sub': 'back_sub',
+      'back_sub2': 'back_sub2',
+      'tag': 'tag'}])
+    '''
+    return render_template('deck.html', deckInfo=deckInfo, cards=cards)
+if __name__ == "__main__":  # toujours à la fin!
     app.run(debug=True)

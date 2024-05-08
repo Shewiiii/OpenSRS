@@ -11,16 +11,16 @@
             <form action="" method="post" novalidate>
                 {{ form.hidden_tag() }}
                 <p>
-                    {{ form.deck.label }}<br>
-                    {{ form.deck(size=50, class_="cardform") }}
-                    {% if form.deck.errors == ['This field is required.'] %}
+                    {{ form.deckid.label }}<br>
+                    {{ form.deckid(class_="cardform select") }}
+                    {% if form.deckid.errors == ['This field is required.'] %}
                     <span style="color: red;">Veuillez remplir ce champ</span>
                     {% endif %}
                 </p>
                 <p>
                     {{ form.front.label }}<br>
                     {{ form.front(size=1000, class_="cardform") }}
-                    {% if form.deck.errors == ['This field is required.'] %}
+                    {% if form.front.errors == ['This field is required.'] %}
                     <span style="color: red;">Veuillez remplir ce champ</span>
                     {% endif %}
                 </p>
@@ -31,7 +31,7 @@
                 <p>
                     {{ form.back.label }}<br>
                     {{ form.back(size=1000, class_="cardform") }}
-                    {% if form.deck.errors == ['This field is required.'] %}
+                    {% if form.back.errors == ['This field is required.'] %}
                     <span style="color: red;">Veuillez remplir ce champ</span>
                     {% endif %}
                 </p>

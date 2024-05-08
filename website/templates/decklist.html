@@ -2,7 +2,73 @@
 {% block head%}{% endblock %}
 
 {% block body%}
+<p>Voici la liste de tous les decks que vous avez.</p>
+<a class="bouton bouton1">Créer un deck</a>
+<div style="padding-top: 100px"></div>
 <div class="decklist">
-    <p>- Votre liste de decks -</p>
+    <div class="element" id="e5" onclick="assombrir('e5')" onmouseleave="désassombrir('e5')">
+        <div class="assombreur" style="display: none;">
+            <a href="">
+                <button class="btn b1">Review</button>
+            </a>
+            <a href="">
+                <button class="btn voirplus">Voir plus</button>
+            </a>
+        </div>
+        <div class="zoneclic"></div>
+        <div class="imageDeck">
+            <img class="cover" src="../static/img/521089272.png" />
+        </div>
+        <div class="texteDeck">
+            <h4>Yuzuki peek</h4>
+            <p>Ceci est un deck vraiment très bien avec tout plein de cartes pour apprendre des mots en japonais (askip)
+                !
+            </p>
+            <p>Créé le ...</p>
+        </div>
+    </div>
+    {% for deck in decks %}
+    <div id="{{ deck['deck_id'] }}" class="element" onclick="assombrir('{{ deck['deck_id'] }}')"
+        onmouseleave="désassombrir('{{ deck['deck_id'] }}')">
+        <div class="assombreur" style="display: none;">
+            <a href="">
+                <button class="btn b1">Review</button>
+            </a>
+            <a href="/deck/{{ deck['deck_id'] }}">
+                <button class="btn voirplus">Voir plus</button>
+            </a>
+        </div>
+        <div class="zoneclic"></div>
+        <div class="imageDeck"><img class="cover" src="" /></div>
+        <div class="texteDeck">
+            <h4>{{ deck['name'] }}</h4>
+            <p>{{ deck['description'] }}</p>
+            <p>Créé le {{ deck['created'] }}</p>
+            <p>Nombre de cartes: {{ deck['card_count'] }}</p>
+        </div>
+    </div>
+    {% endfor %}
+
 </div>
+<script>
+    function désassombrir(id) {
+        ass = document.getElementById(id).getElementsByClassName("assombreur")[0].style;
+        ass.animation = "fadeOut 0.2s";
+        ass.animationFillMode = "forwards";
+        setTimeout(() => {
+            ass.display = "none";
+        }, 100)
+    }
+
+    function assombrir(id) {
+        let ass = document.getElementById(id).getElementsByClassName('assombreur')[0].style;
+        if (ass.display == "block") {
+            désassombrir(id);
+        } else {
+            ass.display = "block";
+            ass.animation = "fadeIn 0.2s";
+            ass.animationFillMode = "both";
+        };
+    }
+</script>
 {% endblock %}

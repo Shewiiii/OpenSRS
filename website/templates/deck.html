@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block head%}{% endblock %}
+
+{% block body%}
+<div class="hero alt">
+    <div class="texte">
+        <h2>{{ deckInfo['name'] }}</h2>
+        <p class="description">{{ deckInfo['description'] }} (Ceci est un deck vraiment très bien avec tout plein de cartes pour apprendre des mots en
+            japonais (askip)! Maître corbeau sur un arbre perché tenait en son bec un fromage maître renard par l'odeur alléché lui tint à peu près ce langage)</p>
+    </div>
+    <div class="image imageDeck carre">
+        <img class="cover2" src="../static/img/GLhCKmOaEAAIwaT.jpg" />
+    </div>
+</div>
+<div class="separateur">
+    <svg viewBox="0 0 100 30" fill="none">
+        <line x1="15" y1="10" x2="85" y2="10" style="stroke: rgb(255, 255, 255); stroke-width: 20px ;"
+            stroke-linecap="round" />
+    </svg>
+</div>
+{% endblock %}

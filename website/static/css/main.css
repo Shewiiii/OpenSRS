@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css?family=Poppins:700|Poppins:400');
+@import url("https://fonts.googleapis.com/css?family=Poppins:700|Poppins:400");
 :root {
   --text: #f5f5ff;
   --background: #121118;
@@ -6,13 +6,13 @@
   --secondary: #7b71cc;
   --secondary2: #161521;
   --secondary3: #201e31;
-  --secondary4: #322E4F; /*bouton2 */
+  --secondary4: #322e4f; /*bouton2 */
   --accent: #513ac5;
   --idkgraph: #312f42;
 }
 
 body {
-  font-family: 'Poppins';
+  font-family: "Poppins";
   font-weight: 400;
   color: var(--text);
   background-color: var(--background);
@@ -20,46 +20,60 @@ body {
   margin-right: 10%;
 }
 
+html {
+  font-size: 100%;
+} /* 16px */
 
-html {font-size: 100%;} /* 16px */
+h1 {
+  font-size: 4.21rem; /* 67.36px */
+}
 
-h1 {font-size: 4.210rem; /* 67.36px */}
+h2 {
+  font-size: 3.158rem; /* 50.56px */
+}
 
-h2 {font-size: 3.158rem; /* 50.56px */}
+h3 {
+  font-size: 2.369rem; /* 37.92px */
+}
 
-h3 {font-size: 2.369rem; /* 37.92px */}
+h4 {
+  font-size: 1.777rem; /* 28.48px */
+}
 
-h4 {font-size: 1.777rem; /* 28.48px */}
+h5 {
+  font-size: 1.333rem; /* 21.28px */
+}
 
-h5 {font-size: 1.333rem; /* 21.28px */}
-
-small {font-size: 0.750rem; /* 12px */}
+small {
+  font-size: 0.75rem; /* 12px */
+}
 
 .presentation {
   padding-top: 25%;
 }
 
-
 .effet {
   background: linear-gradient(to right, #6356c8, #434bea);
-  -webkit-text-fill-color: transparent; 
-  -webkit-background-clip: text; 
+  -webkit-text-fill-color: transparent;
+  -webkit-background-clip: text;
   background-clip: text;
 }
 
-
 .hero {
-	display: flex;
-	flex-direction: row;
-	justify-content: space-between;
-	width: 100%;
-	margin: 2rem 6rem;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 100%;
+  margin: 2rem 6rem;
+}
+.alt {
+  justify-content: space-around;
+}
+#pageform {
+  padding-top: 0 !important;
 }
 
 .texte {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
   gap: 3em;
   width: 600px;
 }
@@ -69,13 +83,18 @@ small {font-size: 0.750rem; /* 12px */}
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-
 }
 
 @keyframes floating {
-  0% { transform: translate(0,  0px); }
-  50%  { transform: translate(0, 25px); }
-  100%   { transform: translate(0, -0px); }    
+  0% {
+    transform: translate(0, 0px);
+  }
+  50% {
+    transform: translate(0, 25px);
+  }
+  100% {
+    transform: translate(0, -0px);
+  }
 }
 
 .anim {
@@ -84,7 +103,6 @@ small {font-size: 0.750rem; /* 12px */}
   animation-iteration-count: infinite;
   animation-timing-function: ease-in-out;
 }
-
 
 svg {
   max-width: 80%;
@@ -120,7 +138,6 @@ svg {
   background-color: var(--secondary4);
 }
 
-
 .bouton:hover {
   transform: translate(0, -3px);
   box-shadow: 0 20px 80px -10px var(--primary);
@@ -134,7 +151,7 @@ svg {
   margin: 2rem 6rem;
 }
 
-.cards { 
+.cards {
   display: flex;
   flex-direction: row;
   align-items: stretch;
@@ -142,7 +159,7 @@ svg {
   gap: 1rem;
 }
 
-.card { 
+.card {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -155,17 +172,16 @@ svg {
   background-color: var(--secondary2);
   border-radius: 15px;
   width: 100%;
-  transition-property: opacity,margin-top;
-  transition-duration:  1s;
+  transition-property: opacity, margin-top;
+  transition-duration: 1s;
   transition-timing-function: ease;
   opacity: 0;
-  margin-top:100px;
+  margin-top: 100px;
 }
 
 .cardTitle {
   margin-bottom: 0px;
 }
-
 
 .playground {
   height: 450px;
@@ -188,8 +204,8 @@ svg {
   padding: 50px;
   background-color: var(--secondary3);
   text-align: center;
-  transition-property: opacity,margin-top;
-  transition-duration:  1s;
+  transition-property: opacity, margin-top;
+  transition-duration: 1s;
   transition-timing-function: ease-in-out;
   margin-top: 200px;
   opacity: 0;
@@ -197,9 +213,7 @@ svg {
 
 .playground2 {
   height: 450px;
-
 }
-
 
 .visible {
   opacity: 1;
@@ -207,7 +221,7 @@ svg {
 }
 .nomargintop {
   margin-top: 0;
-} 
+}
 .nomarginbot {
   margin-bottom: 0;
 }
@@ -231,16 +245,21 @@ svg {
   background-color: var(--secondary4);
   text-align: center;
 }
+
+.description {
+  font-size: 1.3rem;
+}
+
 .cardform {
   background-color: var(--secondary3);
   appearance: none;
   border-radius: 30px;
-  padding: 1% 2% 1% 2%;
+  padding: 10px 20px;
   margin-top: 10px;
   margin-bottom: 10px;
   margin-right: 3%;
   border: 0px;
-  color: #FFF;
+  color: #fff;
   font-family: Segoe UI Semibold;
   font-size: 16px;
   width: 96%;
@@ -248,7 +267,7 @@ svg {
 
 .creerbouton {
   border: 0;
-  font-family: 'Poppins';
+  font-family: "Poppins";
 }
 
 .OK {
@@ -261,4 +280,206 @@ svg {
   margin-left: auto;
   margin-right: auto;
   text-align: center;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.select {
+  width: 50%;
+}
+
+.deckList {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.element {
+  user-select: none;
+  position: relative;
+  width: 25%;
+  min-width: 300px;
+  max-width: 460px;
+  border-radius: 20px;
+  color: white;
+  transition-property: background-color;
+  transition-duration: 0.2s;
+  background-color: var(--secondary3);
+  margin-right: 50px;
+  margin-bottom: 50px;
+  padding: 0px 0px 10px 0px;
+  overflow: hidden;
+}
+
+.element:hover {
+  background-color: var(--secondary4);
+}
+
+.texteDeck {
+  margin: 0px, 10px, 0px, 100px;
+  width: 90%;
+  padding-left: 5%;
+  padding-right: 5%;
+}
+
+.imageDeck {
+  width: 100%;
+  height: 100px;
+  background-color: #050505;
+  color: white;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.carre {
+  width: 430px;
+  height: 430px;
+  border-radius: 30px;
+}
+
+.cover {
+  object-fit: cover;
+  margin-top: -30%;
+  width: 100%;
+}
+
+.cover2 {
+  object-fit: cover;
+  width: 100%;
+}
+
+.zoneclic {
+  background: transparent;
+  cursor: pointer;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.assombreur {
+  background: #050505b9;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  animation-fill-mode: forwards;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.btn {
+  box-sizing: border-box;
+  appearance: none;
+  background-color: transparent;
+  border: 1px solid #ffffff;
+  border-radius: 30px;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 17px;
+  padding: 17px;
+  width: 80%;
+  text-decoration: none;
+  text-align: center;
+  font-weight: 700;
+  transition-property: color, background-color;
+  transition-duration: 0.2s;
+  font-family: Segoe UI Semibold;
+  position: absolute;
+  display: inline-block;
+  margin: 20px;
+  left: 5%;
+  right: 5%;
+}
+
+.btn:hover {
+  color: #050505;
+  background-color: #ffffff;
+}
+.b1 {
+  color: #050505;
+  top: 20%;
+  background-color: #dac5ff;
+  border: 1px solid #dac5ff;
+}
+
+.b2 {
+  top: 30%;
+}
+
+.b3 {
+  top: 40%;
+}
+
+.voirplus {
+  top: 50%;
+}
+
+.texteDeck > h4 {
+  margin-top: 20px;
+  margin-bottom: 30px;
+}
+
+.texteDeck > p {
+  margin: 5px;
+}
+
+@media screen and (max-width: 1235px) {
+  .hero {
+    flex-direction: column;
+    text-align: center;
+    margin: auto;
+  }
+  .texte {
+    margin: auto;
+    width: 85%;
+  }
+  .image {
+    margin: 50px auto 50px auto;
+  }
+  .description {
+    font-size: 1rem;
+  }
+  .carre {
+    width: 350px;
+    height: 350px;
+  }
+  h1 {
+    font-size: 3.5rem;
+  }
+  h2 {
+    font-size: 2.5rem;
+  }
+  body {
+    margin: 0;
+    text-align: center;
+  }
+  .zone {
+    width: 75%;
+    min-width: 1px;
+  }
+  .zone2 {
+    margin-top: 100px;
+  }
 }

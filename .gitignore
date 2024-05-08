@@ -1,3 +1,4 @@
 #fichier dans lequel des codes etc sont stockés
 code/config.py
 .venv
+__pycache__
