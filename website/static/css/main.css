@@ -1,4 +1,5 @@
-@import url("https://fonts.googleapis.com/css?family=Poppins:700|Poppins:400");
+@import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+
 :root {
   --text: #f5f5ff;
   --background: #121118;
@@ -8,7 +9,10 @@
   --secondary3: #201e31;
   --secondary4: #322e4f; /*bouton2 */
   --accent: #513ac5;
+  --clear: #b6a8ff;
   --idkgraph: #312f42;
+  --red: #88283c;
+  --brown: #2c1c22;
 }
 
 body {
@@ -66,9 +70,12 @@ small {
   width: 100%;
   margin: 2rem 6rem;
 }
+
 .alt {
   justify-content: space-around;
+  margin: 0;
 }
+
 #pageform {
   padding-top: 0 !important;
 }
@@ -115,6 +122,20 @@ svg {
   margin: auto;
 }
 
+.goback {
+  height: 35px;
+  width: 35px;
+  transition-duration: 0.2s;
+  transition-property: margin-left;
+  margin-left: 20px;
+  cursor: pointer;
+}
+
+.goback:hover {
+  margin-left: 10px;
+  padding-right: 10px;
+}
+
 .bouton {
   border-radius: 10px;
   cursor: pointer;
@@ -126,6 +147,7 @@ svg {
   margin: 0;
   display: inline-block;
   user-select: none;
+  text-decoration: none;
 }
 
 .bouton1 {
@@ -138,9 +160,25 @@ svg {
   background-color: var(--secondary4);
 }
 
+.boutonRouge {
+  color: var(--text);
+  background-color: var(--red);
+}
+
 .bouton:hover {
   transform: translate(0, -3px);
+}
+
+.bouton1:hover {
   box-shadow: 0 20px 80px -10px var(--primary);
+}
+
+.bouton2:hover {
+  box-shadow: 0 20px 80px -10px var(--secondary4);
+}
+
+.boutonRouge:hover {
+  box-shadow: 0 20px 80px -10px var(--red);
 }
 
 .boutons {
@@ -227,7 +265,7 @@ svg {
 }
 
 .zone {
-  width: 55%;
+  /* width: 75%; */
   min-width: 700px;
   margin-left: auto;
   margin-right: auto;
@@ -297,6 +335,7 @@ svg {
 
 .element {
   user-select: none;
+  opacity: 0;
   position: relative;
   width: 25%;
   min-width: 300px;
@@ -323,7 +362,21 @@ svg {
   padding-right: 5%;
 }
 
+.texteDeck > .pdescription {
+  padding-bottom: 20px;
+}
+
+.texteDeck > h4 {
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+.texteDeck > p {
+  margin: 5px;
+}
+
 .imageDeck {
+  position: relative;
   width: 100%;
   height: 100px;
   background-color: #050505;
@@ -369,6 +422,34 @@ svg {
   height: 100%;
   z-index: 2;
   animation-fill-mode: forwards;
+}
+
+.asalt {
+  background: #05050573;
+}
+
+@keyframes anim {
+  0% {
+    opacity: 0;
+    transform: translateY(20%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0%);
+  }
+}
+
+@keyframes ranim {
+  0% {
+    animation-timing-function: ease-in;
+    opacity: 1;
+    transform: translateY(0%);
+  }
+  100% {
+    animation-timing-function: ease-in;
+    opacity: 0;
+    transform: translateY(20%);
+  }
 }
 
 @keyframes fadeIn {
@@ -420,8 +501,8 @@ svg {
 .b1 {
   color: #050505;
   top: 20%;
-  background-color: #dac5ff;
-  border: 1px solid #dac5ff;
+  background-color: var(--clear);
+  border: 1px solid var(--clear);
 }
 
 .b2 {
@@ -436,16 +517,73 @@ svg {
   top: 50%;
 }
 
-.texteDeck > h4 {
-  margin-top: 20px;
-  margin-bottom: 30px;
+.tout {
+  background: transparent;
+  opacity: 0;
+  animation: fadeIn 0.2s;
+  animation-fill-mode: forwards;
 }
 
-.texteDeck > p {
-  margin: 5px;
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.idkforreal {
+  position: absolute;
+}
+
+.ouinon {
+  justify-content: center;
+  ;
+}
+
+.changerImage {
+  opacity: 0.0; 
+  position: absolute; 
+  top: 0; 
+  left: 0; 
+  bottom: 0; 
+  right: 0; 
+  width: 100%; 
+  height:100%;
+  cursor: pointer;
+}
+
+@media screen and (min-width: 1235px) {
+  .centrer {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    -webkit-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+  }
 }
 
 @media screen and (max-width: 1235px) {
+  .boutons {
+    justify-content: center;
+  }
+  .flecheConteneur {
+    padding-left: 45%;
+    padding-right: 55%;
+  }
+  .idkforreal {
+    position: relative;
+  }
   .hero {
     flex-direction: column;
     text-align: center;
@@ -459,7 +597,7 @@ svg {
     margin: 50px auto 50px auto;
   }
   .description {
-    font-size: 1rem;
+    font-size: 1.2rem;
   }
   .carre {
     width: 350px;
@@ -482,4 +620,10 @@ svg {
   .zone2 {
     margin-top: 100px;
   }
+}
+
+.smalltext {
+  font-size: small;
+  font-weight: 500;
+  color: #7c7892;
 }

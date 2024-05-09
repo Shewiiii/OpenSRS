@@ -67,6 +67,8 @@ def create_deck(user_id=Constants.temp_user_id, name='name', description='descri
     string = f'INSERT INTO {decks} VALUES ({deck_id},{user_id},"{name}","{description}","{created}");'
     db.query(string)
 
+def delete_deck(deck_id, table=Constants.decks_table):
+    db.query(f"DELETE FROM {table} WHERE deck_id = {deck_id};")
 
 def create_card(deck_id=1, front="front", front_sub="front_sub", back="back", back_sub="back_sub", back_sub2="back_sub2", tag="tag", table=Constants.cards_table, user_id=Constants.temp_user_id) -> None:
     card_id = get_free_id()
@@ -83,6 +85,14 @@ def delete_all_cards(table=Constants.cards_table) -> None:
     for card_id in ids:
         delete_card(card_id)
 
+def delete_all_decks(table=Constants.decks_table):
+    ids = get_all_ids(table)
+    for deck_id in ids:
+        delete_deck(deck_id)
+
+def delete_everything(deck_table=Constants.decks_table, card_table=Constants.cards_table):
+    delete_all_decks(deck_table)
+    delete_all_cards(card_table)
 
 def get_deck_list_from_user(user_id=Constants.temp_user_id, table=Constants.decks_table) -> list[tuple[int, str]]:
     cursor = db.query(f'SELECT * FROM {table} WHERE user_id = {user_id};')

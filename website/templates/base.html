@@ -15,7 +15,11 @@
 </head>
 
 <body>
+    {% if title %}
+    <h3>OpenSRS</h3>
+    {% else %}
     <h1>OpenSRS</h1>
+    {% endif %}
     {% block body%}{% endblock %}
 </body>
 

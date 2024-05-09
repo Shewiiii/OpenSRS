@@ -3,30 +3,12 @@
 
 {% block body%}
 <p>Voici la liste de tous les decks que vous avez.</p>
-<a class="bouton bouton1">Créer un deck</a>
+<a class="bouton bouton1" onclick="redirection('/addDeck')">Créer un deck</a>
 <div style="padding-top: 100px"></div>
 <div class="decklist">
-    <div class="element" id="e5" onclick="assombrir('e5')" onmouseleave="désassombrir('e5')">
-        <div class="assombreur" style="display: none;">
-            <a href="">
-                <button class="btn b1">Review</button>
-            </a>
-            <a href="">
-                <button class="btn voirplus">Voir plus</button>
-            </a>
-        </div>
-        <div class="zoneclic"></div>
-        <div class="imageDeck">
-            <img class="cover" src="../static/img/521089272.png" />
-        </div>
-        <div class="texteDeck">
-            <h4>Yuzuki peek</h4>
-            <p>Ceci est un deck vraiment très bien avec tout plein de cartes pour apprendre des mots en japonais (askip)
-                !
-            </p>
-            <p>Créé le ...</p>
-        </div>
-    </div>
+    {% if decks|length == 0 %}
+    <p>Rien à montrer, créez votre premier deck !</p>
+    {% endif %}
     {% for deck in decks %}
     <div id="{{ deck['deck_id'] }}" class="element" onclick="assombrir('{{ deck['deck_id'] }}')"
         onmouseleave="désassombrir('{{ deck['deck_id'] }}')">
@@ -34,7 +16,7 @@
             <a href="">
                 <button class="btn b1">Review</button>
             </a>
-            <a href="/deck/{{ deck['deck_id'] }}">
+            <a onclick="redirection('/deck/{{ deck['deck_id'] }}')">
                 <button class="btn voirplus">Voir plus</button>
             </a>
         </div>
@@ -42,9 +24,10 @@
         <div class="imageDeck"><img class="cover" src="" /></div>
         <div class="texteDeck">
             <h4>{{ deck['name'] }}</h4>
-            <p>{{ deck['description'] }}</p>
-            <p>Créé le {{ deck['created'] }}</p>
-            <p>Nombre de cartes: {{ deck['card_count'] }}</p>
+            <p class="pdescription">{{ deck['description'] }}</p>
+            <p class="smalltext">Nombre de cartes: {{ deck['card_count'] }}</p>
+            <p class="smalltext">Créé: {{ deck['created'] }}</p>
+            <p class="smalltext">ID: {{ deck['deck_id'] }}</p>
         </div>
     </div>
     {% endfor %}
@@ -70,5 +53,41 @@
             ass.animationFillMode = "both";
         };
     }
+
+    function afficher() {
+        let elements = document.getElementsByClassName("element");
+        for (i = 0; i < elements.length; i++) {
+            if (i <= 23) {
+                elements[i].style.animation = "anim 1s"
+                elements[i].style.animationDelay = String(i * (0.1 - i * 0.005)) + "s";
+                elements[i].style.animationFillMode = "forwards";
+            } else {
+                elements[i].style.opacity = 1;
+            }
+            elements[i].style.display = "block";
+        }
+    }
+
+    function redirection(lien) {
+        let elements = document.getElementsByClassName('element');
+        for (i = 0; i < elements.length; i++) {
+            if (elements[i].style.display == "block") {
+                elements[i].style.opacity = 1
+                elements[i].style.animation = "ranim 0.25s"
+                if (i <= 5) {
+                    elements[i].style.animationDelay = String(i * 0.02) + "s";
+                } else {
+                    elements[i].style.animationDelay = String(0.1) + "s";
+                }
+                elements[i].style.animationFillMode = "forwards";
+            }
+        }
+        setTimeout(() => {
+            window.location.replace(lien);
+        }, 400)
+    }
+
+    afficher()
+
 </script>
 {% endblock %}

@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block head%}{% endblock %}
+
+{% block body%}
+<div class="tout">
+    <div class="idkforreal">
+        <div class="flecheConteneur">
+            <div class="goback" onclick="redirection('decklist')">
+                <svg viewBox="0 0 110 160" fill="none">
+                    <line x1="105" y1="20" x2="35" y2="85" style="stroke: rgb(255, 255, 255); stroke-width: 10px" />
+                    <line x1="35" y1="85" x2="105" y2="150" style="stroke: rgb(255, 255, 255); stroke-width: 10px" />
+                </svg>
+            </div>
+        </div>
+        <p style="padding-left: 20px;padding-top: 0;padding-bottom: 0;">Retour</p>
+    </div>
+    <div class="centrer">
+        <div id="pageform" class="hero" style="margin: 0;">
+            <div class="zone">
+                <div class="texte2">
+                    <h3 class="nomargintop nomarginbot">Créer un deck !</h3>
+                    <p><i>Les champs marqués avec des * sont obligatoires.</i></p>
+                    <form action="" method="post" novalidate>
+                        {{ form.hidden_tag() }}
+                        <p>
+                            {{ form.name.label }}<br>
+                            {{ form.name(size=1000, class_="cardform") }}
+                            {% if form.name.errors == ['This field is required.'] %}
+                            <span style="color: red;">Veuillez remplir ce champ</span>
+                            {% endif %}
+                        </p>
+                        <p>
+                            {{ form.description.label }}<br>
+                            {{ form.description(size=1000, class_="cardform") }}
+                        </p>
+
+                        <p>{{ form.submit(class_="bouton bouton1 creerbouton") }}</p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    let element = document.getElementsByClassName("tout")[0];
+
+    function redirection(lien) {
+        element.style.animation = 'fadeOut 0.2s'
+        setTimeout(() => {
+            window.location.replace(lien);
+        }, 200)
+    }
+</script>
+<script src="../static/js/form.js"></script>
+{% endblock %}

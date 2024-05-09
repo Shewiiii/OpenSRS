@@ -1,9 +1,7 @@
-DROP TABLE cards2;
-DROP TABLE users;
 DROP TABLE decks;
 DROP TABLE reviews;
 CREATE TABLE users (
-    user_id INT PRIMARY KEY,
+    user_id INT NOT NULL PRIMARY KEY,
     username VARCHAR(255),
     email VARCHAR(255),
     password VARCHAR(255),
@@ -13,7 +11,7 @@ CREATE TABLE decks (
     deck_id INT PRIMARY KEY NOT NULL,
     user_id INT REFERENCES users(user_id),
     name VARCHAR(100),
-    description VARCHAR(100),
+    description VARCHAR(5000),
     created DATETIME
 );
 CREATE TABLE cards2 (
