@@ -23,9 +23,10 @@
             {% endif %}
             <div class="assombreur asalt" onmouseover="assombrir()" onmouseleave="désassombrir()">
                 <p class="centrer">Changer d'image</p>
-                <form method="POST" action="{{ url_for('changeImg', deck_id=deckInfo['deck_id']) }}" enctype="multipart/form-data">
+                <form method="POST" action="{{ url_for('changeImg', deck_id=deckInfo['deck_id']) }}"
+                    enctype="multipart/form-data">
                     <input type="file" class="changeImg" accept=".png,.jpg,.gif,.webp" name="image">
-                    <input id="submit" type="submit" style="display: none;">   
+                    <input id="submit" type="submit" style="display: none;">
                 </form>
             </div>
         </div>
@@ -34,14 +35,30 @@
         <a class="bouton bouton1" onclick="redirection(` {{ deckInfo['deck_id'] }}/add` )">Ajouter des cartes</a>
         <a class="bouton boutonRouge" onclick="redirection(` {{ deckInfo['deck_id'] }}/delete` )">Supprimer le deck</a>
     </div>
-    <div class="separateur">
+    <div class="separateur nomargintop nomarginbot">
         <svg viewBox="0 0 100 30" fill="none">
-            <line x1="15" y1="10" x2="85" y2="10" style="stroke: rgb(255, 255, 255); stroke-width: 20px ;"
+            <line x1="15" y1="10" x2="85" y2="10" style="stroke: rgb(255, 255, 255); stroke-width: 10px ;"
                 stroke-linecap="round" />
         </svg>
     </div>
     {% for card in cards %}
-    <p>{{ card['front'] }}</p>
+    <div class="cardEntry">
+        <div class="flexCard">
+            <h4 class="front">{{ card['front'] }}</h4>
+            <div class="flexCard" style="column-gap: 1rem;">
+                <p class="tag">{{ card['tag'] }}</p>
+                <a class="batsu" style="height: 20px;width: 20px;" href="{{ url_for('deleteCard',deck_id=deckInfo['deck_id'] ,card_id=card['card_id']) }}">
+                    <svg viewBox="0 0 50 50" fill="none">
+                        <line x1="0" y1="50" x2="50" y2="0" style="stroke: rgb(255, 255, 255); stroke-width: 5px ;" stroke-linecap="round" />
+                        <line x1="0" y1="0" x2="50" y2="50" style="stroke: rgb(255, 255, 255); stroke-width: 5px ;" stroke-linecap="round" />
+                    </svg>
+                </a>
+            </div>
+        </div>
+        <p class="front">{{ card['back'] }}</p>
+
+
+    </div>
     {% endfor %}
 </div>
 <script>

@@ -123,6 +123,11 @@ def changeImg(deck_id):
         f.save(path)
         return redirect(f'{deck_id}')
 
+@app.route('/deck/<deck_id>/<card_id>/delete', methods=['GET', 'POST'])
+def deleteCard(card_id,deck_id):
+    delete_card(card_id)
+    return redirect(f'/deck/{deck_id}')
+
 
 if __name__ == "__main__":  # toujours à la fin!
     app.run(debug=True)
