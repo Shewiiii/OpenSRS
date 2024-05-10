@@ -16,9 +16,13 @@
 
 <body>
     {% if title %}
-    <h3>OpenSRS</h3>
+    <div id="title" onclick="location.href = '/'" style="cursor: pointer;">
+        <h3>OpenSRS</h3>
+    </div>
     {% else %}
-    <h1>OpenSRS</h1>
+    <div id="title">
+        <h1 onclick="location.href = '/'" style="cursor: pointer;">OpenSRS</h1>
+    </div>
     {% endif %}
     {% block body%}{% endblock %}
 </body>

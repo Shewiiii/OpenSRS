@@ -36,18 +36,24 @@
     </div>
 </div>
 <script>
+
+    document.getElementsByClassName('changerImage')[0].addEventListener('change', function(e) {
+        console.log('uwuuuuuu')
+    });
+
     function désassombrir() {
         ass = document.getElementsByClassName("assombreur")[0].style;
         ass.animation = "fadeOut 0.2s";
         ass.animationFillMode = "forwards";
-    }
+    };
 
     function assombrir() {
         let ass = document.getElementsByClassName('assombreur')[0].style;
         ass.animation = "fadeIn 0.2s";
         ass.animationFillMode = "forwards";
 
-    }
+    };
+
     let element = document.getElementsByClassName("tout")[0];
 
     function redirection(lien) {
@@ -55,7 +61,8 @@
         setTimeout(() => {
             window.location.replace(lien);
         }, 200)
-    }
+    };
+
     désassombrir()
 </script>
 {% endblock %}

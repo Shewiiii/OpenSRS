@@ -120,6 +120,8 @@ svg {
   width: 50px;
   text-align: center;
   margin: auto;
+  margin-top: 125px;
+  margin-bottom: 100px;
 }
 
 .goback {
@@ -213,8 +215,6 @@ svg {
   transition-property: opacity, margin-top;
   transition-duration: 1s;
   transition-timing-function: ease;
-  opacity: 0;
-  margin-top: 100px;
 }
 
 .cardTitle {
@@ -245,8 +245,6 @@ svg {
   transition-property: opacity, margin-top;
   transition-duration: 1s;
   transition-timing-function: ease-in-out;
-  margin-top: 200px;
-  opacity: 0;
 }
 
 .playground2 {
@@ -496,7 +494,7 @@ svg {
 
 .btn:hover {
   color: #050505;
-  background-color: #ffffff;
+  background-color: var(--text);
 }
 .b1 {
   color: #050505;
@@ -514,6 +512,7 @@ svg {
 }
 
 .voirplus {
+  border: 2px solid var(--text);
   top: 50%;
 }
 

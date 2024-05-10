@@ -18,7 +18,7 @@ $(document).ready(function () {
 
 //https://stackoverflow.com/questions/26667562/how-to-start-animations-when-element-appears-on-screen
 
-var myChart = document.getElementsByClassName("myChart")[0]
+var myChart = document.getElementsByClassName("myChart")[0].getContext("2d");
 
 var gradient = myChart.createLinearGradient(0, 0, 800, 0); //x0, y0, x1, y1
 gradient.addColorStop(0, "#A48CED");
