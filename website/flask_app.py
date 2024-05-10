@@ -1,8 +1,12 @@
-from flask import Flask, render_template, flash, redirect
+from flask import Flask, render_template, flash, redirect,request
 from app.config import Config
 from app.card_form import Cardform
 from app.deck_form import Deckform
 from app.manage_database import *
+from app.manage_database import *
+import pathlib
+import os
+
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -22,17 +26,17 @@ def home(name):
 def decklist():
     decks = get_decks_from_user(user_id=1)
     '''Exemple:
-    [{'deck_id': 0,
-        'name': 'name',
-        'description': 'description',
-        'created': datetime.datetime(2024, 5, 9, 19, 44, 17),
-        'card_count': 0},
-    {'deck_id': 1,
-        'name': 'name',
-        'description': 'description',
-        'created': datetime.datetime(2024, 5, 9, 19, 44, 18),
-        'card_count': 0}]
+    [{
+        'deck_id': 0,
+        'name': 'keqing',
+        'description': 'yes',
+        'created': datetime.datetime(2024, 5, 10, 14, 21, 55),
+        'card_count': 2,
+        'img_id': 0,
+        'extension': '.jpg'
+    }]
     '''
+
     return render_template('decklist.html', title='Liste de decks', decks=decks)
 
 
@@ -60,7 +64,9 @@ def deckPage(deck_id):
       'back_sub2': 'back_sub2',
       'tag': 'tag'}])
     '''
-    return render_template('deck.html', title=deckInfo['name'],deckInfo=deckInfo, cards=cards)
+    img_id, extension = get_img(deck_id)
+
+    return render_template('deck.html', title=deckInfo['name'],deckInfo=deckInfo, cards=cards, img_id=img_id, extension=extension)
 
 
 @app.route('/deck/<deck_id>/add', methods=['GET', 'POST'])
@@ -103,6 +109,19 @@ def deckform():
         create_deck(name=name, description=description)
         return redirect('/decklist')
     return render_template('addDeck.html', title='Créer un deck', form=form)
+
+@app.route('/deck/<deck_id>', methods=['GET', 'POST'])
+def changeImg(deck_id):
+    if request.method == 'POST':
+        f = request.files['image']
+        filename = f.filename
+        extension = os.path.splitext(filename)[1]
+
+        img_id = add_image(deck_id, extension)
+        path = pathlib.Path(__file__).parents[0] / 'static/img/uploads' / f'{img_id}{extension}'
+        
+        f.save(path)
+        return redirect(f'{deck_id}')
 
 
 if __name__ == "__main__":  # toujours à la fin!

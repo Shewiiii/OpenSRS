@@ -377,7 +377,7 @@ svg {
   position: relative;
   width: 100%;
   height: 100px;
-  background-color: #050505;
+  background-color: var(--secondary2);
   color: white;
   border-radius: 10px;
   overflow: hidden;
@@ -550,7 +550,7 @@ svg {
   ;
 }
 
-.changerImage {
+.changeImg {
   opacity: 0.0; 
   position: absolute; 
   top: 0; 

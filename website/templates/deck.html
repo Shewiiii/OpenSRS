@@ -18,9 +18,15 @@
             <p class="description">{{ deckInfo['description'] }}</p>
         </div>
         <div class="image imageDeck carre">
-            <img class="cover2" src="../static/img/521089266.png" />
+            {% if img_id != None %}
+            <img class="cover2" src="../static/img/uploads/{{ img_id }}{{ extension }}" />
+            {% endif %}
             <div class="assombreur asalt" onmouseover="assombrir()" onmouseleave="désassombrir()">
-                <input type="file" class="changerImage">
+                <p class="centrer">Changer d'image</p>
+                <form method="POST" action="{{ url_for('changeImg', deck_id=deckInfo['deck_id']) }}" enctype="multipart/form-data">
+                    <input type="file" class="changeImg" accept=".png,.jpg,.gif,.webp" name="image">
+                    <input id="submit" type="submit" style="display: none;">   
+                </form>
             </div>
         </div>
     </div>
@@ -34,11 +40,14 @@
                 stroke-linecap="round" />
         </svg>
     </div>
+    {% for card in cards %}
+    <p>{{ card['front'] }}</p>
+    {% endfor %}
 </div>
 <script>
-
-    document.getElementsByClassName('changerImage')[0].addEventListener('change', function(e) {
-        console.log('uwuuuuuu')
+    let submit = document.getElementById('submit')
+    document.getElementsByClassName('changeImg')[0].addEventListener('change', function (e) {
+        submit.click()
     });
 
     function désassombrir() {

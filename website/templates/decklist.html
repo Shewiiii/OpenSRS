@@ -21,7 +21,11 @@
             </a>
         </div>
         <div class="zoneclic"></div>
-        <div class="imageDeck"><img class="cover" src="" /></div>
+        <div class="imageDeck">
+            {% if deck['img_id'] != None %}
+            <img class="cover" src="../static/img/uploads/{{ deck['img_id'] }}{{ deck['extension'] }}" />
+            {% endif %}
+        </div>
         <div class="texteDeck">
             <h4>{{ deck['name'] }}</h4>
             <p class="pdescription">{{ deck['description'] }}</p>

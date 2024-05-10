@@ -1,6 +1,6 @@
 import mysql.connector
 from datetime import datetime
-from app.secret import Trucs
+from secret import Trucs
 import re
 
 class DB:

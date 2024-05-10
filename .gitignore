@@ -2,3 +2,4 @@
 code/config.py
 .venv
 __pycache__
+secret.py
