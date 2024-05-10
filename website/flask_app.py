@@ -129,5 +129,10 @@ def deleteCard(card_id,deck_id):
     return redirect(f'/deck/{deck_id}')
 
 
+@app.route('/login')
+def login():
+    #blabla
+    return render_template('login.html',title = 'Connection')
+
 if __name__ == "__main__":  # toujours à la fin!
     app.run(debug=True)
