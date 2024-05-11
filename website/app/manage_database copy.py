@@ -1,6 +1,7 @@
 import mysql.connector
 from datetime import datetime
 from secret import Trucs
+from constants import Constants
 import re
 
 class DB:
@@ -29,13 +30,6 @@ class DB:
 db = DB()
 
 
-class Constants:
-    cards_table = 'cards2'
-    decks_table = 'decks'
-    image_table = 'images'
-    temp_user_id = 1
-
-
 class Card:
     def __init__(self, id) -> None:
         self.id = id
@@ -62,7 +56,7 @@ def get_free_id(table=Constants.cards_table) -> int:
         return lastid+1
 
 
-def add_image(deck_id, extension:str, table=Constants.image_table) -> int:
+def add_image(deck_id: int, extension: str, table=Constants.image_table) -> int:
     cursor = db.query(f'SELECT img_id FROM {table} WHERE deck_id = {deck_id}')
     result = cursor.fetchall()
     if len(result) != 0:
@@ -76,10 +70,10 @@ def add_image(deck_id, extension:str, table=Constants.image_table) -> int:
         return img_ig
     
 
-def delete_image(deck_id):
+def delete_image(deck_id: int):
     db.query(f'DELETE FROM images WHERE deck_id = {deck_id};')
 
-def get_img(deck_id, table=Constants.image_table) -> tuple[int,str]:
+def get_img(deck_id: int, table=Constants.image_table) -> tuple[int,str]:
     cursor = db.query(f'SELECT img_id, extension FROM {table} WHERE deck_id = {deck_id}')
     result = cursor.fetchall()
     if len(result) == 0:
@@ -95,7 +89,7 @@ def create_deck(user_id=Constants.temp_user_id, name='name', description='descri
     db.query(string)
 
 
-def delete_deck(deck_id, deck_table=Constants.decks_table, card_table=Constants.cards_table):
+def delete_deck(deck_id: int, deck_table=Constants.decks_table, card_table=Constants.cards_table):
     db.query(f"DELETE FROM {deck_table} WHERE deck_id = {deck_id};")
     db.query(f"DELETE FROM {card_table} WHERE deck_id = {deck_id};")
     delete_image(deck_id)
@@ -103,11 +97,13 @@ def delete_deck(deck_id, deck_table=Constants.decks_table, card_table=Constants.
 
 def create_card(deck_id=1, front="front", front_sub="front_sub", back="back", back_sub="back_sub", back_sub2="back_sub2", tag="tag", table=Constants.cards_table, user_id=Constants.temp_user_id) -> None:
     card_id = get_free_id()
-    string = f'INSERT INTO {table} VALUES ({card_id},{user_id},"{deck_id}","{front}","{front_sub}","{back}","{back_sub}","{back_sub2}","{tag}");'
+    now = datetime.now(UTC)
+    created = now.strftime("%Y-%m-%d %H:%M:%S")
+    string = f'INSERT INTO {table} VALUES ({card_id},{user_id},"{deck_id}","{front}","{front_sub}","{back}","{back_sub}","{back_sub2}","{tag}","{created}");'
     db.query(string)
 
 
-def delete_card(card_id, table=Constants.cards_table) -> None:
+def delete_card(card_id: int, table=Constants.cards_table) -> None:
     db.query(f"DELETE FROM {table} WHERE card_id = {card_id};")
 
 
@@ -145,7 +141,7 @@ def get_decks_from_user(user_id=Constants.temp_user_id, table=Constants.decks_ta
     return decks
 
 
-def get_deck_from_id(deck_id, user_id, decks_table=Constants.decks_table, cards_table=Constants.cards_table):
+def get_deck_from_id(deck_id: int, user_id: int, decks_table=Constants.decks_table, cards_table=Constants.cards_table):
     #1ère requête pour vérifier si un deck existe pour un utilisateur donné
     cursor = db.query(f'SELECT * FROM {decks_table} WHERE {decks_table}.deck_id = {deck_id} AND {decks_table}.user_id = {user_id};')
     result = cursor.fetchall()
@@ -160,5 +156,5 @@ def get_deck_from_id(deck_id, user_id, decks_table=Constants.decks_table, cards_
         result = cursor.fetchall()
         cards = []
         for row in result:
-            cards.append({'card_id': row[0], 'front': row[3], 'front_sub': row[4], 'back': row[5], 'back_sub': row[6], 'back_sub2': row[7], 'tag': row[8]})
+            cards.append({'card_id': row[0], 'front': row[3], 'front_sub': row[4], 'back': row[5], 'back_sub': row[6], 'back_sub2': row[7], 'tag': row[8], 'created': row[9]})
         return (deckInfos, cards)

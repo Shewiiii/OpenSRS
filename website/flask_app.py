@@ -4,6 +4,7 @@ from app.card_form import Cardform
 from app.deck_form import Deckform
 from app.manage_database import *
 from app.manage_database import *
+
 import pathlib
 import os
 
@@ -70,7 +71,7 @@ def deckPage(deck_id):
 
 
 @app.route('/deck/<deck_id>/add', methods=['GET', 'POST'])
-def cardform(deck_id):
+def addCard(deck_id):
     form = Cardform()
     name = get_deck_from_id(deck_id,1)[0]['name']
     if form.validate_on_submit():
@@ -79,7 +80,7 @@ def cardform(deck_id):
         back = form.back.data
         back_sub = form.back_sub.data
         back_sub2 = form.back_sub2.data
-        tag = form.tag.data
+        tag = form.tag.data 
         create_card(deck_id, front, front_sub, back,
                     back_sub, back_sub2, tag, user_id=1)
         flash(f'La carte {front} a bien été enregistré dans le deck {name} !')
@@ -110,6 +111,7 @@ def deckform():
         return redirect('/decklist')
     return render_template('addDeck.html', title='Créer un deck', form=form)
 
+
 @app.route('/deck/<deck_id>', methods=['GET', 'POST'])
 def changeImg(deck_id):
     if request.method == 'POST':
@@ -123,6 +125,7 @@ def changeImg(deck_id):
         f.save(path)
         return redirect(f'{deck_id}')
 
+
 @app.route('/deck/<deck_id>/<card_id>/delete', methods=['GET', 'POST'])
 def deleteCard(card_id,deck_id):
     delete_card(card_id)
@@ -133,6 +136,7 @@ def deleteCard(card_id,deck_id):
 def login():
     #blabla
     return render_template('login.html',title = 'Connection')
+
 
 if __name__ == "__main__":  # toujours à la fin!
     app.run(debug=True)

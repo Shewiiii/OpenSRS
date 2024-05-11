@@ -1,6 +1,7 @@
 import mysql.connector
 from datetime import datetime
 from app.secret import Trucs
+from app.constants import Constants
 import re
 
 class DB:
@@ -27,13 +28,6 @@ class DB:
 
 
 db = DB()
-
-
-class Constants:
-    cards_table = 'cards2'
-    decks_table = 'decks'
-    image_table = 'images'
-    temp_user_id = 1
 
 
 class Card:
@@ -103,7 +97,9 @@ def delete_deck(deck_id: int, deck_table=Constants.decks_table, card_table=Const
 
 def create_card(deck_id=1, front="front", front_sub="front_sub", back="back", back_sub="back_sub", back_sub2="back_sub2", tag="tag", table=Constants.cards_table, user_id=Constants.temp_user_id) -> None:
     card_id = get_free_id()
-    string = f'INSERT INTO {table} VALUES ({card_id},{user_id},"{deck_id}","{front}","{front_sub}","{back}","{back_sub}","{back_sub2}","{tag}");'
+    now = datetime.now()
+    created = now.strftime("%Y-%m-%d %H:%M:%S")
+    string = f'INSERT INTO {table} VALUES ({card_id},{user_id},"{deck_id}","{front}","{front_sub}","{back}","{back_sub}","{back_sub2}","{tag}","{created}");'
     db.query(string)
 
 
@@ -160,5 +156,5 @@ def get_deck_from_id(deck_id: int, user_id: int, decks_table=Constants.decks_tab
         result = cursor.fetchall()
         cards = []
         for row in result:
-            cards.append({'card_id': row[0], 'front': row[3], 'front_sub': row[4], 'back': row[5], 'back_sub': row[6], 'back_sub2': row[7], 'tag': row[8]})
+            cards.append({'card_id': row[0], 'front': row[3], 'front_sub': row[4], 'back': row[5], 'back_sub': row[6], 'back_sub2': row[7], 'tag': row[8], 'created': row[9]})
         return (deckInfos, cards)
