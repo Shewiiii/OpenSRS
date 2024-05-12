@@ -1,9 +1,11 @@
-from flask import Flask, render_template, flash, redirect,request
+from flask import Flask, render_template, flash, redirect,request, session, make_response
+from flask_mysqldb import MySQL
 from app.config import Config
 from app.card_form import Cardform
 from app.deck_form import Deckform
 from app.manage_database import *
-
+from datetime import datetime, timedelta
+import MySQLdb.cursors, re, hashlib
 import pathlib
 import os
 
@@ -11,6 +13,12 @@ import os
 app = Flask(__name__)
 app.config.from_object(Config)
 
+app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_USER'] = 'root'
+app.config['MYSQL_PASSWORD'] = '!nxbTjiPw7@Pb8'
+app.config['MYSQL_DB'] = 'cards'
+
+mysql = MySQL(app)
 
 @app.route('/')
 def index():
@@ -70,7 +78,7 @@ def deckPage(deck_id):
 
 
 @app.route('/deck/<deck_id>/add', methods=['GET', 'POST'])
-def addCard(deck_id):
+def cardform(deck_id):
     form = Cardform()
     name = get_deck_from_id(deck_id,1)[0]['name']
     if form.validate_on_submit():
@@ -79,7 +87,7 @@ def addCard(deck_id):
         back = form.back.data
         back_sub = form.back_sub.data
         back_sub2 = form.back_sub2.data
-        tag = form.tag.data 
+        tag = form.tag.data
         create_card(deck_id, front, front_sub, back,
                     back_sub, back_sub2, tag, user_id=1)
         flash(f'La carte {front} a bien été enregistré dans le deck {name} !')
@@ -110,7 +118,6 @@ def deckform():
         return redirect('/decklist')
     return render_template('addDeck.html', title='Créer un deck', form=form)
 
-
 @app.route('/deck/<deck_id>', methods=['GET', 'POST'])
 def changeImg(deck_id):
     if request.method == 'POST':
@@ -124,18 +131,79 @@ def changeImg(deck_id):
         f.save(path)
         return redirect(f'{deck_id}')
 
-
 @app.route('/deck/<deck_id>/<card_id>/delete', methods=['GET', 'POST'])
 def deleteCard(card_id,deck_id):
     delete_card(card_id)
     return redirect(f'/deck/{deck_id}')
 
 
-@app.route('/login')
+@app.route('/login', methods=['GET', 'POST'])
 def login():
-    #blabla
-    return render_template('login.html',title = 'Connection')
+    msg='bouh'
+    print(request.form)
+    if request.method == 'POST' and 'username' in request.form and 'password' in request.form:
+        username = request.form['username']
+        password = request.form['password']
+        """ hash = password + app.secret_key
+        hash = hashlib.sha1(hash.encode()) # encode le password
+        password = hash.hexdigest()""" 
 
+        testLogin = test_login(username, password)
+        #None si connection échouée, user_id sinon
+
+        if testLogin != None:
+            response = make_response(redirect('/decklist'))
+            response.set_cookie('user_id', testLogin, expires=datetime.now() + timedelta(days=30))
+            response.set_cookie('connected', 'True', expires=datetime.now() + timedelta(days=30))
+            response.set_cookie('username', username, expires=datetime.now() + timedelta(days=30))
+            response.set_cookie('password', password, expires=datetime.now() + timedelta(days=30))
+
+
+            return response
+        
+        else:
+            msg = 'username ou mot de passe incorrect'
+
+    return render_template('login.html',title = 'Connexion'+msg,msg=msg)
+
+@app.route('/logout')
+def logout():
+    session.pop('connecte', None)
+    session.pop('user_id', None)
+    session.pop('username', None)
+    return redirect('/login')
+
+# @app.route('/register')
+# def register():
+#     msg = ''
+#     if request.method == 'POST' and 'username' in request.form and 'password' in request.form and 'email' in request.form:
+#         username = request.form['username']
+#         password = request.form['password']
+#         email = request.form['email']
+
+#         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+#         cursor.execute('SELECT * FROM cards WHERE username = %s', (username,))
+#         account = cursor.fetchone()
+
+#         if account:
+#             msg = 'Compte déjà existant'
+#         elif not re.match(r'[^@]+@[^@]+\.[^@]+', email):
+#             msg = 'Adresse mail invalide'
+#         elif not re.match(r'[A-Za-z0-9]+', username):
+#             msg = "L'identifiant ne comptenir que des lettres et des nombres"
+#         elif not username or not password or not email:
+#             msg = 'Veuillez remplir les champs manquants'
+#         else:
+#             '''hash = password + app.secret_key
+#             hash = hashlib.sha1(hash.encode())
+#             password = hash.hexdigest()'''
+#             cursor.execute('INSERT INTO accounts VALUES (NULL, %s, %s, %s)', (username, password, email,))
+#             mysql.connection.commit()
+#             msg = 'Compte crée avec succès !'
+#     elif request.method == 'POST':
+#         msg = 'Veuillez remplir les champs manquants'
+
+#     return render_template('/', msg=msg)
 
 if __name__ == "__main__":  # toujours à la fin!
     app.run(debug=True)
