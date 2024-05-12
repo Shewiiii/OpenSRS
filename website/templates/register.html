@@ -15,20 +15,21 @@
     <div class="centrer">
         <div id="pageform" class="hero" style="margin: 0;">
             <div class="zone">
-                <h3>Identifier vous !</h3>
-                {% if msg == ['Identifiant ou mot de passe incorrecte'] %}
-                <p>Identifiant ou mot de passe incorrecte</p>
-                {% endif %}
+                <h3>Créer votre compte !</h3>
                 <form method="post"> 
-                    <label for="username">Identifiant</label> 
-                    <input class="cardform" type="text" name="username" id="username" required/>  
+                    <label for="pseudo">Identifiant</label> 
+                    <input class="cardform" type="text" name="pseudo" id="pseudo" required/>  
                     <br> 
                     <br> 
                     <label for="password">Mot de passe</label> 
                     <input class="cardform" type="text" name="password" id="password" required/>  
                     <br> 
-                    <br> 
-                    <input class="bouton on bouton1" type="submit" name="submit" id="submit" value="Se connecter"/>  
+                    <br>
+                    <label for="email">Adresse mail</label> 
+                    <input class="cardform" type="text" name="email" id="email" required/>
+                    <br>
+                    <br>
+                    <input class="bouton on bouton1" type="submit" name="submit" id="submit" value="Créer"/>  
                 </form> 
             </div>
         </div>
@@ -45,5 +46,6 @@
         }, 200)
     }
 </script>
+
 
 {% endblock %}

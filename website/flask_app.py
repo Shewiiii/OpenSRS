@@ -3,7 +3,6 @@ from app.config import Config
 from app.card_form import Cardform
 from app.deck_form import Deckform
 from app.manage_database import *
-from app.manage_database import *
 
 import pathlib
 import os

@@ -1,8 +1,9 @@
 import mysql.connector
-from datetime import datetime
+from datetime import datetime, UTC
 from app.secret import Trucs
 from app.constants import Constants
 import re
+from fsrs import *
 
 class DB:
     # en gros: se connecte à la base de données quand nécessaire, pas de pb d'actualisation comme ça
@@ -95,12 +96,14 @@ def delete_deck(deck_id: int, deck_table=Constants.decks_table, card_table=Const
     delete_image(deck_id)
 
 
-def create_card(deck_id=1, front="front", front_sub="front_sub", back="back", back_sub="back_sub", back_sub2="back_sub2", tag="tag", table=Constants.cards_table, user_id=Constants.temp_user_id) -> None:
-    card_id = get_free_id()
+def create_card(deck_id=1, card_id=None, front="front", front_sub="front_sub", back="back", back_sub="back_sub", back_sub2="back_sub2", tag="tag", table=Constants.cards_table, user_id=Constants.temp_user_id) -> None:
+    if card_id == None:
+        card_id = get_free_id()
     now = datetime.now()
     created = now.strftime("%Y-%m-%d %H:%M:%S")
     string = f'INSERT INTO {table} VALUES ({card_id},{user_id},"{deck_id}","{front}","{front_sub}","{back}","{back_sub}","{back_sub2}","{tag}","{created}");'
     db.query(string)
+
 
 
 def delete_card(card_id: int, table=Constants.cards_table) -> None:
@@ -158,3 +161,52 @@ def get_deck_from_id(deck_id: int, user_id: int, decks_table=Constants.decks_tab
         for row in result:
             cards.append({'card_id': row[0], 'front': row[3], 'front_sub': row[4], 'back': row[5], 'back_sub': row[6], 'back_sub2': row[7], 'tag': row[8], 'created': row[9]})
         return (deckInfos, cards)
+
+
+def get_card_ids_from_deck_id(deck_id: int, user_id:int = Constants.temp_user_id) -> list[int]:
+    deckInfos, cards = get_deck_from_id(deck_id, user_id)
+    card_ids = []
+    for card in cards:
+        card_ids.append(card['card_id'])
+    return card_ids
+
+
+def add_review_entry(card_id: int, deck_id: int, user_id: int, rating: str, date: datetime = datetime.now(UTC), table = Constants.reviews_table) -> None:
+    #les ratings pouvant être: 'Again', 'Hard', 'Good', 'Easy'
+    db.query(f'INSERT INTO {table} VALUES ({card_id}, {deck_id}, {user_id}, "{rating}", "{date}");')
+
+
+def forget_card(card_id: int, table = Constants.reviews_table) -> None:
+    db.query(f"DELETE FROM {table} WHERE card_id = {card_id};")
+
+
+def get_ratings_from_card_id(card_id: int, table = Constants.reviews_table, stringForm: bool = False):
+    cursor = db.query(f"SELECT * FROM {table} WHERE card_id = {card_id};")
+    result = cursor.fetchall()
+    ratings = []
+    if stringForm == True:
+        for row in result:
+            ratings.append(row[2])
+    else:
+        for row in result:
+            dico = {'Again': Rating.Again, 'Hard': Rating.Hard, 'Good': Rating.Good, 'Easy': Rating.Easy}
+            ratings.append(dico[row[3]])
+    return ratings
+
+
+def get_reviews_from_deck_id(deck_id: int, table = Constants.reviews_table) -> list[Rating]:
+    cursor = db.query(f"SELECT * FROM {table} WHERE deck_id = {deck_id};")
+    result = cursor.fetchall()
+    reviews = []
+    for review in result:
+        reviews.append(review)
+    return reviews
+
+
+def test_login(username: str, password: str) -> bool:
+    cursor = db.query(f'SELECT * FROM users WHERE username = "{username}" AND password = "{password}"')
+    result = cursor.fetchall()
+    if len(result) == 0:
+        return None
+    else:
+        return str(result[0][0])

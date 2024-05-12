@@ -20,20 +20,18 @@ liste = []
 class Carte:
     listeCartes = []
     f.p.w = (0.3035, 4.7433, 8.8727, 45.4892, 4.9939, 1.5012, 0.755, 0.0, 1.6041, 0.1, 1.0249, 2.2375, 0.0419, 0.3747, 1.0551, 0.2335, 3.3913) #jpdb
-    def __init__(self,id: int = 1) -> None:
+    def __init__(self, card_id: int = 1, created: datetime = datetime.now(UTC)) -> None:
         Carte.listeCartes.append(self)
         self.card = Card()
         self.ratings = []
-        self.startDate = datetime.now(UTC)
-        self.scheduling_cards = f.repeat(self.card, datetime.now(UTC))
-        self.id = id
-
+        self.startDate = created
+        self.scheduling_cards = f.repeat(self.card, created)
+        self.card_id = card_id
 
     def rate(self,rating: Rating):
         self.card = self.scheduling_cards[rating].card        
         self.scheduling_cards = f.repeat(self.card,self.card.due)
-        self.ratings[rating]
-
+        self.ratings.append(rating)
 
     def rateDebug(self,rating: Rating):
         Carte.rate(self,rating)
@@ -44,6 +42,9 @@ class Carte:
         delta = self.card.due - datetime.now(UTC)
         return delta.total_seconds()
     
+    def due(self):
+        return self.card.due
+
     def resetDueTime(self): 
         #à utiliser que pour test: reset pas la mémoire de la carte
         self.card.due = datetime.now(UTC)
