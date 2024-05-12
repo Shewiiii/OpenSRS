@@ -38,25 +38,25 @@ def get_due_date_from_card_id(card_id: int, user_id: int = Constants.temp_user_i
 #mais sont néanmoins beaucoup plus facile à comprendre et à intégrer dans d'autres fonctions
  
 
-def get_due_cards_from_deck_id(deck_id: int, user_id: int = Constants.temp_user_id, card_table = Constants.cards_table) -> list[int]:
-    card_ids = get_card_ids_from_deck_id(deck_id)
-    cursor = db.query(f'SELECT created FROM {card_table} WHERE user_id = {user_id};')
-    result = cursor.fetchall()
-    if len(result) == 0:
-        return card_ids
-    else:
-        present = datetime.now(UTC)
-        dues = []
-        for card_id in card_ids:
-            created = result[0][0].replace(tzinfo=UTC)
-            card = Carte(created=created)
-            ratings = get_ratings_from_card_id(card_id, stringForm=False)
-            for rating in ratings:
-                card.rate(rating)
-            if card.due() - present < timedelta(minutes=1):
-                dues.append(card_id)
-    dues.sort()
-    return dues
+# def get_due_cards_from_deck_id(deck_id: int, user_id: int = Constants.temp_user_id, card_table = Constants.cards_table) -> list[int]:
+#     card_ids = get_card_ids_from_deck_id(deck_id)
+#     cursor = db.query(f'SELECT created FROM {card_table} WHERE user_id = {user_id};')
+#     result = cursor.fetchall()
+#     if len(result) == 0:
+#         return card_ids
+#     else:
+#         present = datetime.now(UTC)
+#         dues = []
+#         for card_id in card_ids:
+#             created = result[0][0].replace(tzinfo=UTC)
+#             card = Carte(created=created)
+#             ratings = get_ratings_from_card_id(card_id, stringForm=False)
+#             for rating in ratings:
+#                 card.rate(rating)
+#             if card.due() - present < timedelta(minutes=1):
+#                 dues.append(card_id)
+#     dues.sort()
+#     return dues
 
 #Note2: version + compliqué, mais fais maintenant seulement 3 requêtes SQL, peu importe la taille du deck !
 

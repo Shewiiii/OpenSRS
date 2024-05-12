@@ -1,11 +1,10 @@
 from flask import Flask, render_template, flash, redirect,request, session, make_response
-from flask_mysqldb import MySQL
 from app.config import Config
 from app.card_form import Cardform
 from app.deck_form import Deckform
 from app.manage_database import *
 from datetime import datetime, timedelta
-import MySQLdb.cursors, re, hashlib
+import re
 import pathlib
 import os
 
@@ -18,7 +17,6 @@ app.config['MYSQL_USER'] = 'root'
 app.config['MYSQL_PASSWORD'] = '!nxbTjiPw7@Pb8'
 app.config['MYSQL_DB'] = 'cards'
 
-mysql = MySQL(app)
 
 @app.route('/')
 def index():
@@ -88,7 +86,7 @@ def cardform(deck_id):
         back_sub = form.back_sub.data
         back_sub2 = form.back_sub2.data
         tag = form.tag.data
-        create_card(deck_id, front, front_sub, back,
+        create_card(deck_id, None, front, front_sub, back,
                     back_sub, back_sub2, tag, user_id=1)
         flash(f'La carte {front} a bien été enregistré dans le deck {name} !')
         return redirect(f'/deck/{deck_id}/add')

@@ -101,7 +101,8 @@ def create_card(deck_id=1, card_id=None, front="front", front_sub="front_sub", b
         card_id = get_free_id()
     now = datetime.now()
     created = now.strftime("%Y-%m-%d %H:%M:%S")
-    string = f'INSERT INTO {table} VALUES ({card_id},{user_id},"{deck_id}","{front}","{front_sub}","{back}","{back_sub}","{back_sub2}","{tag}","{created}");'
+    string = f'INSERT INTO {table} VALUES ({card_id},{user_id},{deck_id},"{front}","{front_sub}","{back}","{back_sub}","{back_sub2}","{tag}","{created}");'
+    print(string,"fghnirgoertigbreio")
     db.query(string)
 
 

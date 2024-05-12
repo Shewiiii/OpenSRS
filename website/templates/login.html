@@ -15,8 +15,8 @@
     <div class="centrer">
         <div id="pageform" class="hero" style="margin: 0;">
             <div class="zone">
-                <h3>Identifier vous !</h3>
-                {% if msg == ['Identifiant ou mot de passe incorrecte'] %}
+                <h3 class="nomargintop nomarginbot">Se connecter</h3>
+                {% if msg == 'Identifiant ou mot de passe incorrect' %}
                 <p>Identifiant ou mot de passe incorrecte</p>
                 {% endif %}
                 <form method="post"> 
@@ -28,7 +28,7 @@
                     <input class="cardform" type="text" name="password" id="password" required/>  
                     <br> 
                     <br> 
-                    <input class="bouton on bouton1" type="submit" name="submit" id="submit" value="Se connecter"/>  
+                    <input class="bouton creerbouton bouton1" type="submit" name="submit" id="submit" value="Se connecter"/>  
                 </form> 
             </div>
         </div>
