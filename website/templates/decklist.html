@@ -13,7 +13,7 @@
     <div id="{{ deck['deck_id'] }}" class="element" onclick="assombrir('{{ deck['deck_id'] }}')"
         onmouseleave="désassombrir('{{ deck['deck_id'] }}')">
         <div class="assombreur" style="display: none;">
-            <a href="">
+            <a onclick="redirection('/deck/{{ deck['deck_id'] }}/review')">
                 <button class="btn b1">Review</button>
             </a>
             <a onclick="redirection('/deck/{{ deck['deck_id'] }}')">

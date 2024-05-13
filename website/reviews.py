@@ -68,18 +68,27 @@ def get_due_cards_from_deck_id(deck_id: int, user_id: int = Constants.temp_user_
         for card_id, dt in idnDatetime.items():
             #ajoute une entrée dans le dico "idk" pour chaque carte du deck, genre {1: {'ratings': [],'created': datetime(..., tzinfo=datetime.timezone.utc)}, 2: {...} }
             idk[card_id] = {'ratings': [],'created': dt.replace(tzinfo=UTC)}
-        
+
         for review in reviews:
             #remplis les listes 'ratings' dans les valeurs, par exemple {1: {'ratings': [Rating.Again, Rating.Good],'created': datetime(...,, tzinfo=datetime.timezone.utc)}, 2: {...} }
             #datetime correspondant à la création de la carte
-            card_id = review[0]
-            idk[card_id]['ratings'].append(dico[review[3]])
+            card_id = review['card_id']
+            idk[card_id]['ratings'].append(dico[review['rating']])
 
         for card_id, infos in idk.items():
             ratings = infos['ratings']
             card = Carte(created=infos['created'])
             for rating in ratings:
+                #O(n^2), horrible...
                 card.rate(rating)
             if card.due() - present < timedelta(seconds=5):
                 dues.append(card_id)
     return dues
+
+
+def get_due_cards_from_list(card_ids: list):
+    reviews = get_reviews_from_list(card_ids)
+# from random import randint
+# for id in ids:
+#     for i in range(50):
+#         add_review_entry(id, 0, 1, ['Again', 'Hard', 'Good', 'Easy'][randint(0,3)])

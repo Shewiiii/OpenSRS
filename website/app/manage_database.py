@@ -57,7 +57,7 @@ def get_free_id(table=Constants.cards_table) -> int:
         return lastid+1
 
 def remove_ghost_reviews(card_table = Constants.cards_table, reviews_table = Constants.reviews_table) -> None:
-    '''Ne devrait que être utilisé en cas d'erreurs.
+    '''Ne devrait être utilisé que en cas d'erreurs.
     '''
     ids = get_all_ids(card_table)
     cursor = db.query(f'SELECT card_id FROM {reviews_table};')
@@ -112,7 +112,7 @@ def create_deck(user_id=Constants.temp_user_id, name='name', description='descri
 
 
 def delete_deck(deck_id: int, deck_table=Constants.decks_table, card_table=Constants.cards_table, reviews_table=Constants.reviews_table):
-    '''Supprime un deck, son image et toutes ses cartes associées des tables correspondantes.
+    '''Supprime un deck, son image et toutes ses cartes associées les tables correspondantes.
     '''
     db.query(f"DELETE FROM {deck_table} WHERE deck_id = {deck_id};")
     db.query(f"DELETE FROM {card_table} WHERE deck_id = {deck_id};")
@@ -147,11 +147,26 @@ def delete_all_cards(table=Constants.cards_table) -> None:
         delete_card(card_id)
 
 def delete_everything(table=Constants.decks_table) -> None:
-    '''Supprime TOUS les decks, leur images et toutes leur cartes associées des tables correspondantes.
+    '''Supprime TOUS les decks, leur images et toutes leur cartes associées les tables correspondantes.
     '''
     ids = get_all_ids(table)
     for deck_id in ids:
         delete_deck(deck_id)
+
+
+def get_card_from_card_id(card_id: int, table=Constants.cards_table) -> None | dict:
+    '''Retourne les informations d'une carte sous forme d'un dictionnaire 
+        à partir de son id.
+    '''
+    cursor = db.query(f'SELECT * FROM {table} WHERE card_id = {card_id}')
+    result = cursor.fetchall()
+    if len(result) == 0:
+        return None
+    else:
+        row = result[0]
+        dico = {'card_id': row[0], 'deck_id': row[2],'front': row[3], 'front_sub': row[4], 'back': row[5], 'back_sub': row[6], 'back_sub2': row[7], 'tag': row[8], 'created': row[9]}
+        return dico
+
 
 def get_deck_list_from_user(user_id=Constants.temp_user_id, table=Constants.decks_table) -> list[tuple[int, str]]:
     '''(Obsolète et spécifique) Retourne tous les decks associé à un utilisateur, à partir de son id, sous forme d'une liste contenant
@@ -210,7 +225,7 @@ def get_card_ids_from_deck_id(deck_id: int, user_id:int = Constants.temp_user_id
 
 
 def add_review_entry(card_id: int, deck_id: int, user_id: int, rating: str, date: datetime = datetime.now(UTC), table = Constants.reviews_table) -> None:
-    '''Ajoute une review dans la table reviews pour une carte, son deck, et son utilisateur donné.
+    '''Ajoute une review dans la table reviews pour une carte, avec son deck et son utilisateur donné.
     '''
     #les ratings pouvant être: 'Again', 'Hard', 'Good', 'Easy'
     db.query(f'INSERT INTO {table} VALUES ({card_id}, {deck_id}, {user_id}, "{rating}", "{date}");')
@@ -238,15 +253,30 @@ def get_ratings_from_card_id(card_id: int, table = Constants.reviews_table, stri
     return ratings
 
 
-def get_reviews_from_deck_id(deck_id: int, table = Constants.reviews_table) -> list[Rating]:
+def get_reviews_from_deck_id(deck_id: int, table = Constants.reviews_table) -> dict:
     '''Retourne les reviews des cartes d'un deck donnée.
     '''
+    #l'utilisation d'un dico rend la fonction bien plus intuitive à utiliser et la rend future proof
     cursor = db.query(f"SELECT * FROM {table} WHERE deck_id = {deck_id};")
     result = cursor.fetchall()
     reviews = []
-    for review in result:
-        dico = {'Again': Rating.Again, 'Hard': Rating.Hard, 'Good': Rating.Good, 'Easy': Rating.Easy}
-        reviews.append(review)
+    for row in result:
+        reviews.append({'card_id': row[0], 'deck_id': row[1], 'user_id': row[2], 'rating': row[3], 'date': row[4]})
+    return reviews
+
+
+def get_reviews_from_list(card_ids: list, table = Constants.reviews_table) -> dict:
+    '''Retourne les reviews des cartes données dans une liste.
+    '''
+    string = f"SELECT * FROM {table} WHERE "
+    for card_id in card_ids:
+        string += f'card_id = {card_id} OR '
+    string = string[:-3] + ';'
+    cursor = db.query(string)
+    reviews = []
+    result = cursor.fetchall()
+    for row in result:
+        reviews.append({'card_id': row[0], 'deck_id': row[1], 'user_id': row[2], 'rating': row[3], 'date': row[4]})
     return reviews
 
 

@@ -3,10 +3,12 @@ from app.config import Config
 from app.card_form import Cardform
 from app.deck_form import Deckform
 from app.manage_database import *
+from app.reviews import *
 from datetime import datetime, timedelta
 import re
 import pathlib
 import os
+import json
 
 
 app = Flask(__name__)
@@ -135,6 +137,34 @@ def deleteCard(card_id,deck_id):
     return redirect(f'/deck/{deck_id}')
 
 
+@app.route('/deck/<deck_id>/review')
+def review(deck_id):
+    dueCards = request.cookies.get('dueCards')
+    if dueCards == None:
+        activeSession = False
+        dueCards = get_due_cards_from_deck_id(deck_id, user_id=1)
+    else:
+        activeSession = True
+        dueCards = json.loads(dueCards)
+        print('due cards:', dueCards)
+
+    #card to review:
+    if len(dueCards) == 0:
+        card = None
+    else:
+        card_id = dueCards[0]
+        card = get_card_from_card_id(card_id)
+
+    #set session cookies:
+    response = make_response(render_template('review.html', title='Review', card=card))
+    if not activeSession:
+        response.set_cookie('dueCards', json.dumps(dueCards))
+
+    return response
+
+@app.route('/deck/<deck_id>/review/Again')
+def rateAgain(deck_id,card_id):
+    
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     msg='bouh'

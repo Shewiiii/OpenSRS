@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block head%}{% endblock %}
+
+{% block body%}
+<p>{{ card['front'] }}</p>
+<p>{{ card['back'] }}</p>
+<a class="bouton bouton2" href="{{ url_for('rateAgain', deck_id=deck_id, card_id=card['card_id']) }}">Again</a>
+
+{% endblock %}
