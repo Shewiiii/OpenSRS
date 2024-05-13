@@ -39,7 +39,7 @@ def get_due_date_from_card_id(card_id: int, user_id: int = Constants.temp_user_i
 
 
 def get_due_cards_from_deck_id(deck_id: int, user_id: int = Constants.temp_user_id, card_table = Constants.cards_table) -> list[int]:
-    '''Retourne les dates (datetime(UTC)) de toutes les cartes associées à un deck donné. 
+    '''Retourne les dates (datetime(UTC)) de toutes les cartes associées à un deck et un utilisateur donné. 
     '''
     deckInfos, cards = get_deck_from_id(deck_id, user_id)
     idnDatetime = {}

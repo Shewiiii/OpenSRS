@@ -210,7 +210,7 @@ def get_card_ids_from_deck_id(deck_id: int, user_id:int = Constants.temp_user_id
 
 
 def add_review_entry(card_id: int, deck_id: int, user_id: int, rating: str, date: datetime = datetime.now(UTC), table = Constants.reviews_table) -> None:
-    '''Ajoute une review dans la table reviews pour une carte et son deck, et son utilisateur donné.
+    '''Ajoute une review dans la table reviews pour une carte, son deck, et son utilisateur donné.
     '''
     #les ratings pouvant être: 'Again', 'Hard', 'Good', 'Easy'
     db.query(f'INSERT INTO {table} VALUES ({card_id}, {deck_id}, {user_id}, "{rating}", "{date}");')
@@ -223,7 +223,7 @@ def forget_card(card_id: int, table = Constants.reviews_table) -> None:
 
 
 def get_ratings_from_card_id(card_id: int, table = Constants.reviews_table, stringForm: bool = False):
-    '''
+    '''Retourne les Rating d'une carte donnée, sous forme de strings ou non. 
     '''
     cursor = db.query(f"SELECT * FROM {table} WHERE card_id = {card_id};")
     result = cursor.fetchall()
@@ -251,7 +251,7 @@ def get_reviews_from_deck_id(deck_id: int, table = Constants.reviews_table) -> l
 
 
 def test_login(username: str, password: str) -> str:
-    '''Teste des identifiants de connection, renvoie l'user_id sous forme d'un string si ces derniers sont valides. 
+    '''Teste des identifiants de connection, renvoie l'user_id sous forme de string si ces derniers sont valides. 
     '''
     cursor = db.query(f'SELECT * FROM users WHERE username = "{username}" AND password = "{password}";')
     result = cursor.fetchall()
