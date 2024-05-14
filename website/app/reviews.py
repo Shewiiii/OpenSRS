@@ -1,5 +1,5 @@
 from app.manage_database import *
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, timezone
 from app.model import Carte
 from fsrs import *
 db = DB()
@@ -21,14 +21,14 @@ def get_ratings_from_card_id(card_id: int, table=Constants.reviews_table) -> lis
 
 
 def get_due_date_from_card_id(card_id: int, user_id: int = Constants.temp_user_id, card_table = Constants.cards_table) -> datetime:
-    '''Retourne la date (datetime(UTC)) due d'une carte donnée.
+    '''Retourne la date (datetime(timezone.utc)) due d'une carte donnée.
     '''
     cursor = db.query(f'SELECT created FROM {card_table} WHERE card_id = {card_id} AND user_id = {user_id};')
     result = cursor.fetchall()
     if len(result) == 0:
         return None
     else:
-        created = result[0][0].replace(tzinfo=UTC)
+        created = result[0][0].replace(tzinfo=timezone.utc)
         card = Carte(created=created)
         ratings = get_ratings_from_card_id(card_id)
         for rating in ratings:
@@ -51,7 +51,7 @@ def get_due_cards_from_deck_id(deck_id: int, user_id: int = Constants.temp_user_
     if len(result) == 0:
         return list(idnDatetime.keys())
     else:
-        present = datetime.now(UTC)
+        present = datetime.now(timezone.utc)
         reviews = get_reviews_from_deck_id(deck_id)
         '''Exemple de reviews:
         [
@@ -65,7 +65,7 @@ def get_due_cards_from_deck_id(deck_id: int, user_id: int = Constants.temp_user_
 
         for card_id, dt in idnDatetime.items():
             #ajoute une entrée dans le dico "idk" pour chaque carte du deck, genre {1: {'ratings': [],'created': datetime(..., tzinfo=datetime.timezone.utc)}, 2: {...} }
-            idk[card_id] = {'ratings': [],'created': dt.replace(tzinfo=UTC)}
+            idk[card_id] = {'ratings': [],'created': dt.replace(tzinfo=timezone.utc)}
 
         for review in reviews:
             #remplis les listes 'ratings' dans les valeurs, par exemple {1: {'ratings': [Rating.Again, Rating.Good],'created': datetime(...,, tzinfo=datetime.timezone.utc)}, 2: {...} }
@@ -90,14 +90,14 @@ def get_due_cards_from_list(card_ids: list):
     idnDatetime = {}
     for card in cards:
         idnDatetime[card['card_id']] = card['created']
-    present = datetime.now(UTC)
+    present = datetime.now(timezone.utc)
     reviews = get_reviews_from_list(card_ids)
     dues = []
     idk = {}
 
     for card_id, dt in idnDatetime.items():
         #ajoute une entrée dans le dico "idk" pour chaque carte du deck, genre {1: {'ratings': [],'created': datetime(..., tzinfo=datetime.timezone.utc)}, 2: {...} }
-        idk[card_id] = {'ratings': [],'created': dt.replace(tzinfo=UTC)}
+        idk[card_id] = {'ratings': [],'created': dt.replace(tzinfo=timezone.utc)}
 
     for review in reviews:
         #remplis les listes 'ratings' dans les valeurs, par exemple {1: {'ratings': [Rating.Again, Rating.Good],'created': datetime(...,, tzinfo=datetime.timezone.utc)}, 2: {...} }

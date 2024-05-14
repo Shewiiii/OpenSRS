@@ -1,5 +1,5 @@
 import mysql.connector
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from app.secret import Trucs
 from app.constants import Constants
 import re
@@ -250,7 +250,7 @@ def add_review_entry(card_id: int, deck_id: int, user_id: int, rating: str, date
     '''
     #les ratings pouvant être: 'Again', 'Hard', 'Good', 'Easy'
     if date == None:
-        date = datetime.now(UTC)
+        date = datetime.now(timezone.utc)
     db.query(f'INSERT INTO {table} VALUES ({card_id}, {deck_id}, {user_id}, "{rating}", "{date}");')
 
 
