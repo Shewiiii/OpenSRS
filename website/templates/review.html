@@ -2,8 +2,36 @@
 {% block head%}{% endblock %}
 
 {% block body%}
-<p>{{ card['front'] }}</p>
-<p>{{ card['back'] }}</p>
-<a class="bouton bouton2" href="{{ url_for('rateAgain', deck_id=deck_id, card_id=card['card_id']) }}">Again</a>
+<div class="tout">
+    <div class="goback" onclick="redirection('/decklist')">
+        <svg viewBox="0 0 110 160" fill="none">
+            <line x1="105" y1="20" x2="35" y2="85" style="stroke: rgb(255, 255, 255); stroke-width: 10px" />
+            <line x1="35" y1="85" x2="105" y2="150" style="stroke: rgb(255, 255, 255); stroke-width: 10px" />
+        </svg>
+    </div>
 
+    <p style="padding-left: 20px;padding-top: 0;padding-bottom: 0;">Retour</p>
+    <p>ID : {{ card['card_id'] }}</p>
+    <p>{{ card['front'] }}</p>
+    <p>{{ card['back'] }}</p>
+    <a class="bouton bouton2"
+        href="{{ url_for('rateAgain', deck_id=card['deck_id'], card_id=card['card_id'], rating='Again') }}">Again</a>
+    <a class="bouton bouton2"
+        href="{{ url_for('rateAgain', deck_id=card['deck_id'], card_id=card['card_id'], rating='Hard') }}">Hard</a>
+    <a class="bouton bouton2"
+        href="{{ url_for('rateAgain', deck_id=card['deck_id'], card_id=card['card_id'], rating='Good') }}">Good</a>
+    <a class="bouton bouton2"
+        href="{{ url_for('rateAgain', deck_id=card['deck_id'], card_id=card['card_id'], rating='Easy') }}">Easy</a>
+</div>
+
+<script>
+    let element = document.getElementsByClassName("tout")[0];
+
+    function redirection(lien) {
+        element.style.animation = 'fadeOut 0.2s'
+        setTimeout(() => {
+            window.location.replace(lien);
+        }, 200)
+    };
+</script>
 {% endblock %}

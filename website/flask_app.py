@@ -44,8 +44,11 @@ def decklist():
         'extension': '.jpg'
     }]
     '''
+    #enlève les cookies de session des cartes
+    response = make_response(render_template('decklist.html', title='Liste de decks', decks=decks))
+    response.set_cookie('session_cards', '', expires=0)
 
-    return render_template('decklist.html', title='Liste de decks', decks=decks)
+    return response
 
 
 @app.route('/deck/<deck_id>')
@@ -139,32 +142,43 @@ def deleteCard(card_id,deck_id):
 
 @app.route('/deck/<deck_id>/review')
 def review(deck_id):
-    dueCards = request.cookies.get('dueCards')
-    if dueCards == None:
+    sessionCards = request.cookies.get('session_cards')
+    #cartes étudiées dans cette session
+
+    if sessionCards == None:
         activeSession = False
         dueCards = get_due_cards_from_deck_id(deck_id, user_id=1)
+        sessionCards = dueCards
     else:
         activeSession = True
-        dueCards = json.loads(dueCards)
-        print('due cards:', dueCards)
+        #à partir de la liste des cartes due dans la session, pour pas à ravoir à scanner tout le deck 
+        sc = json.loads(sessionCards)
+        dueCards = get_due_cards_from_list(sc)
+        print('due cards:', dueCards, 'session', sc)
+        if len(dueCards) == 0:
+            #si plus rien, on rescanne tout le deck
+            dueCards = get_due_cards_from_deck_id(deck_id, user_id=1)
 
-    #card to review:
+    #choisit carte à review:
     if len(dueCards) == 0:
         card = None
     else:
         card_id = dueCards[0]
         card = get_card_from_card_id(card_id)
 
-    #set session cookies:
+    #met les cookies de session:
     response = make_response(render_template('review.html', title='Review', card=card))
     if not activeSession:
-        response.set_cookie('dueCards', json.dumps(dueCards))
+        response.set_cookie('session_cards', json.dumps(sessionCards))
 
     return response
 
-@app.route('/deck/<deck_id>/review/Again')
-def rateAgain(deck_id,card_id):
-    
+@app.route('/deck/<deck_id>/review/<card_id>/<rating>')
+def rateAgain(deck_id,card_id,rating):
+    rating = Constants.rating_dict[rating]
+    add_review_entry(card_id, deck_id, Constants.temp_user_id, rating)
+    return redirect(f'/deck/{deck_id}/review')
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     msg='bouh'

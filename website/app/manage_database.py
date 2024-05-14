@@ -168,6 +168,27 @@ def get_card_from_card_id(card_id: int, table=Constants.cards_table) -> None | d
         return dico
 
 
+def get_cards_from_list(card_ids: list, table=Constants.cards_table) -> None | dict:
+    '''Retourne les informations d'une carte sous forme d'un dictionnaire 
+        à partir d'une liste d'ids.
+    '''
+    string = f"SELECT * FROM {table} WHERE "
+    for card_id in card_ids:
+        string += f'card_id = {card_id} OR '
+
+    string = string[:-3] + ';'
+    cursor = db.query(string)
+    result = cursor.fetchall()
+
+    if len(result) == 0:
+        return None
+    else:
+        cards = []
+        for row in result:
+            dico = {'card_id': row[0], 'deck_id': row[2],'front': row[3], 'front_sub': row[4], 'back': row[5], 'back_sub': row[6], 'back_sub2': row[7], 'tag': row[8], 'created': row[9]}
+            cards.append(dico)
+        return cards
+
 def get_deck_list_from_user(user_id=Constants.temp_user_id, table=Constants.decks_table) -> list[tuple[int, str]]:
     '''(Obsolète et spécifique) Retourne tous les decks associé à un utilisateur, à partir de son id, sous forme d'une liste contenant
         des tuples d'ids et de noms de decks.
@@ -224,10 +245,12 @@ def get_card_ids_from_deck_id(deck_id: int, user_id:int = Constants.temp_user_id
     return card_ids
 
 
-def add_review_entry(card_id: int, deck_id: int, user_id: int, rating: str, date: datetime = datetime.now(UTC), table = Constants.reviews_table) -> None:
+def add_review_entry(card_id: int, deck_id: int, user_id: int, rating: str, date: datetime | None = None, table = Constants.reviews_table) -> None:
     '''Ajoute une review dans la table reviews pour une carte, avec son deck et son utilisateur donné.
     '''
     #les ratings pouvant être: 'Again', 'Hard', 'Good', 'Easy'
+    if date == None:
+        date = datetime.now(UTC)
     db.query(f'INSERT INTO {table} VALUES ({card_id}, {deck_id}, {user_id}, "{rating}", "{date}");')
 
 
