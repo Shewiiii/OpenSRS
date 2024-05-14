@@ -1,5 +1,9 @@
 import json
-data = json.load(open("reviews (1).json","r",encoding="UTF-8"))
+
+filename = '15-05-24 review history'
+inputRepo = 'jpdb'
+outputRepo = 'converted'
+data = json.load(open(f"{inputRepo}/{filename}.json","r",encoding="UTF-8"))
 
 '''Json schema:
 
@@ -24,22 +28,39 @@ card_id,review_time,review_rating,review_state,review_duration
 1465410,1682722378,3
 
 '''
-# total = 0
-# for i in range(6182):
-#     r = len(data["cards_vocabulary_jp_en"][0]["reviews"])
-#     total = total + r
+
+'''Guide vers FSRS optimizer: https://github.com/open-spaced-repetition/fsrs-optimizer
+
+python -m fsrs_optimizer "[NOM DU FICHIER].csv"
+
+timezone: Europe/Paris
+used next day start hour: 0 (reset à minuit avec jpdb)
+the date at which before reviews will be ignored | YYYY-MM-DD (default: 2006-10-05): [Rien]
+filter out suspended cards?: n
+Save graphs?: y
+
+'''
+
 
 ratings = {'fail':1,'nothing':1,'something':1,'hard':2,'okay':3,'easy':4}
 
 tout = "card_id,review_time,review_rating,review_state,review_duration\n"
-for reviewNumber in range(len(data["cards_vocabulary_jp_en"])):
+
+word_count = len(data["cards_vocabulary_jp_en"])
+review_count = 0
+
+for reviewNumber in range(word_count):
     id = data["cards_vocabulary_jp_en"][reviewNumber]["vid"]
     data_mot = data["cards_vocabulary_jp_en"][reviewNumber]["reviews"]
     for review in data_mot:
         try:
             string = f"{id},{review["timestamp"]}000,{ratings[review["grade"]]},{0},{5}"
             tout = tout + string + "\n"
+            review_count += 1
+            if review_count%5000 == 0:
+                print(f'{review_count} reviews analysées...')
         except Exception as e:
             print(e)
 
-open("output.csv","w+",encoding="UTF-8").write(tout)
+open(f"{outputRepo}/{filename}.csv","w+",encoding="UTF-8").write(tout)
+print(f'Fini ! {word_count} mots analysés, avec un total de {review_count} reviews effectuées')
