@@ -5,6 +5,7 @@ from app.constants import Constants
 import re
 from fsrs import *
 
+
 class DB:
     # en gros: se connecte à la base de données quand nécessaire, pas de pb d'actualisation comme ça
     conn = None
@@ -13,7 +14,7 @@ class DB:
         self.conn = mysql.connector.connect(
             host='localhost',
             user='root',
-            password= Trucs.mdp,
+            password=Trucs.mdp,
             database='cards')
 
     def query(self, sql):
@@ -56,7 +57,11 @@ def get_free_id(table=Constants.cards_table) -> int:
         print("lastid:", lastid)
         return lastid+1
 
-def remove_ghost_reviews(card_table = Constants.cards_table, reviews_table = Constants.reviews_table) -> None:
+
+def remove_ghost_reviews(
+        card_table=Constants.cards_table,
+        reviews_table=Constants.reviews_table
+) -> None:
     '''Ne devrait être utilisé que en cas d'erreurs.
     '''
     ids = get_all_ids(card_table)
@@ -65,43 +70,64 @@ def remove_ghost_reviews(card_table = Constants.cards_table, reviews_table = Con
     for row in result:
         card_id = row[0]
         if card_id not in ids:
-            db.query(f'DELETE FROM {reviews_table} WHERE card_id = {card_id};')
+            db.query(
+                f'DELETE FROM {reviews_table} WHERE card_id = {card_id};'
+            )
 
 
-def add_image(deck_id: int, extension: str, table=Constants.image_table) -> int:
+def add_image(
+        deck_id: int,
+        extension: str,
+        table=Constants.image_table
+) -> int:
     '''Associe une image sous format .jpg, .png ou .gif à un deck donné.
 
         Retourne l'id de l'image dans la table images.
     '''
     cursor = db.query(f'SELECT img_id FROM {table} WHERE deck_id = {deck_id}')
     result = cursor.fetchall()
+
     if len(result) != 0:
         print(f"image déjà existante à l'ID {result[0][0]}, remplacage..")
         db.query(f'UPDATE {table} SET extension = "{extension}" WHERE deck_id = {deck_id};')
         return result[0][0]
+
     else:
         img_ig = get_free_id(table=table)
         string = f'INSERT INTO {table} VALUES ({img_ig},{deck_id},"{extension}");'
         db.query(string)
+        
         return img_ig
     
 
-def delete_image(deck_id: int):
+def delete_image(deck_id: int) -> None:
     '''Supprime dans la table images l'entrée d'une image d'un deck donné. 
     '''
     db.query(f'DELETE FROM images WHERE deck_id = {deck_id};')
 
-def get_img(deck_id: int, table=Constants.image_table) -> tuple[int,str]:
+
+def get_img(
+        deck_id: int,
+        table=Constants.image_table
+) -> tuple[int,str]:
     '''Retourne un tuple contenant l'id de l'image dans la table image, et son extension.
     '''
     cursor = db.query(f'SELECT img_id, extension FROM {table} WHERE deck_id = {deck_id};')
     result = cursor.fetchall()
+
     if len(result) == 0:
         return (None, None)
+
     else:
         return (result[0][0], result[0][1])
 
-def create_deck(user_id=Constants.temp_user_id, name='name', description='description', decks=Constants.decks_table) -> None:
+
+def create_deck(
+        user_id: str = Constants.temp_user_id,
+        name: str = 'name',
+        description: str = 'description',
+        decks: str = Constants.decks_table
+) -> None:
     '''Crée un deck associé à un utilisateur en ajoutant une entrée dans la table decks.
     '''
     deck_id = get_free_id(decks)
@@ -111,7 +137,12 @@ def create_deck(user_id=Constants.temp_user_id, name='name', description='descri
     db.query(string)
 
 
-def delete_deck(deck_id: int, deck_table=Constants.decks_table, card_table=Constants.cards_table, reviews_table=Constants.reviews_table):
+def delete_deck(
+        deck_id: int,
+        deck_table: str = Constants.decks_table,
+        card_table: str = Constants.cards_table,
+        reviews_table: str = Constants.reviews_table,
+) -> None:
     '''Supprime un deck, son image et toutes ses cartes associées les tables correspondantes.
     '''
     db.query(f"DELETE FROM {deck_table} WHERE deck_id = {deck_id};")
@@ -120,7 +151,18 @@ def delete_deck(deck_id: int, deck_table=Constants.decks_table, card_table=Const
     delete_image(deck_id)
 
 
-def create_card(deck_id=1, card_id=None, front="front", front_sub="front_sub", back="back", back_sub="back_sub", back_sub2="back_sub2", tag="tag", table=Constants.cards_table, user_id=Constants.temp_user_id) -> None:
+def create_card(
+        deck_id =1,
+        card_id = None,
+        front: str = "front",
+        front_sub: str = "front_sub",
+        back: str = "back",
+        back_sub: str = "back_sub",
+        back_sub2: str = "back_sub2",
+        tag: str = "tag",
+        table: str = Constants.cards_table,
+        user_id: str = Constants.temp_user_id,
+) -> None:
     '''Crée une carte associé à un deck et un utilisateur en ajoutant une entrée dans la table cards2.
     '''
     if card_id == None:
@@ -131,22 +173,26 @@ def create_card(deck_id=1, card_id=None, front="front", front_sub="front_sub", b
     db.query(string)
 
 
-
-def delete_card(card_id: int, card_table=Constants.cards_table, review_table=Constants.reviews_table) -> None:
+def delete_card(
+        card_id: int,
+        card_table: str = Constants.cards_table,
+        review_table: str = Constants.reviews_table,
+) -> None:
     '''Supprime toutes les cartes d'un deck donné.
     '''
     db.query(f"DELETE FROM {card_table} WHERE card_id = {card_id};")
     db.query(f"DELETE FROM {review_table} WHERE card_id = {card_id};")
 
 
-def delete_all_cards(table=Constants.cards_table) -> None:
+def delete_all_cards(table: str = Constants.cards_table,) -> None:
     '''Supprime toutes les cartes de tous les decks.
     '''
     ids = get_all_ids(table)
     for card_id in ids:
         delete_card(card_id)
 
-def delete_everything(table=Constants.decks_table) -> None:
+
+def delete_everything(table: str = Constants.decks_table) -> None:
     '''Supprime TOUS les decks, leur images et toutes leur cartes associées les tables correspondantes.
     '''
     ids = get_all_ids(table)
@@ -154,7 +200,10 @@ def delete_everything(table=Constants.decks_table) -> None:
         delete_deck(deck_id)
 
 
-def get_card_from_card_id(card_id: int, table=Constants.cards_table) -> None | dict:
+def get_card_from_card_id(
+        card_id: int,
+        table=Constants.cards_table
+) -> None | dict:
     '''Retourne les informations d'une carte sous forme d'un dictionnaire 
         à partir de son id.
     '''
@@ -164,15 +213,30 @@ def get_card_from_card_id(card_id: int, table=Constants.cards_table) -> None | d
         return None
     else:
         row = result[0]
-        dico = {'card_id': row[0], 'deck_id': row[2],'front': row[3], 'front_sub': row[4], 'back': row[5], 'back_sub': row[6], 'back_sub2': row[7], 'tag': row[8], 'created': row[9]}
+        dico = {
+            'card_id': row[0],
+            'deck_id': row[2],
+            'front': row[3],
+            'front_sub': row[4],
+            'back': row[5],
+            'back_sub': row[6],
+            'back_sub2': row[7],
+            'tag': row[8],
+            'created': row[9]
+        }
+
         return dico
 
 
-def get_cards_from_list(card_ids: list, table=Constants.cards_table) -> None | dict:
+def get_cards_from_list(
+    card_ids: list,
+    deck_id:int,
+    table=Constants.cards_table
+) -> None | dict:
     '''Retourne les informations d'une carte sous forme d'un dictionnaire 
         à partir d'une liste d'ids.
     '''
-    string = f"SELECT * FROM {table} WHERE "
+    string = f"SELECT * FROM {table} WHERE deck_id = {deck_id} AND"
     for card_id in card_ids:
         string += f'card_id = {card_id} OR '
 
@@ -182,26 +246,47 @@ def get_cards_from_list(card_ids: list, table=Constants.cards_table) -> None | d
 
     if len(result) == 0:
         return None
+
     else:
         cards = []
         for row in result:
-            dico = {'card_id': row[0], 'deck_id': row[2],'front': row[3], 'front_sub': row[4], 'back': row[5], 'back_sub': row[6], 'back_sub2': row[7], 'tag': row[8], 'created': row[9]}
+            dico = {
+                'card_id': row[0],
+                'deck_id': row[2],
+                'front': row[3],
+                'front_sub': row[4],
+                'back': row[5],
+                'back_sub': row[6],
+                'back_sub2': row[7],
+                'tag': row[8],
+                'created': row[9]
+            }
             cards.append(dico)
+
         return cards
 
-def get_deck_list_from_user(user_id=Constants.temp_user_id, table=Constants.decks_table) -> list[tuple[int, str]]:
+def get_deck_list_from_user(
+        user_id=Constants.temp_user_id,
+        table=Constants.decks_table,
+) -> list[tuple[int, str]]:
     '''(Obsolète et spécifique) Retourne tous les decks associé à un utilisateur, à partir de son id, sous forme d'une liste contenant
         des tuples d'ids et de noms de decks.
     '''
     cursor = db.query(f'SELECT * FROM {table} WHERE user_id = {user_id};')
     result = cursor.fetchall()
     liste = []
+
     for row in result:
         liste.append((row[0], row[2]))
+
     return liste
 
 
-def get_decks_from_user(user_id=Constants.temp_user_id, table=Constants.decks_table, cards_table=Constants.cards_table) -> dict:
+def get_decks_from_user(
+        user_id=Constants.temp_user_id,
+        table=Constants.decks_table,
+        cards_table=Constants.cards_table,
+) -> dict:
     '''Retourne tous les decks associé à un utilisateur, à partir de son id, sous forme d'un dictionnaire.
     '''
     cursor = db.query(f'SELECT * FROM {table} WHERE user_id = {user_id};')
@@ -210,32 +295,67 @@ def get_decks_from_user(user_id=Constants.temp_user_id, table=Constants.decks_ta
     for row in result:
         img_id, extension = get_img(row[0])
         count = len(db.query(f'SELECT front FROM {cards_table} WHERE deck_id = {row[0]};').fetchall())
-        decks.append({'deck_id': row[0], 'name': row[2], 'description': row[3], 'created': row[4], 'card_count': count, 'img_id':img_id, 'extension':extension})
+        decks.append({
+            'deck_id': row[0],
+            'name': row[2],
+            'description': row[3],
+            'created': row[4],
+            'card_count': count,
+            'img_id':img_id,
+            'extension':extension
+        })
+    
     return decks
 
 
-def get_deck_from_id(deck_id: int, user_id: int, decks_table=Constants.decks_table, cards_table=Constants.cards_table) -> None | tuple[dict,list[dict]]:
+def get_deck_from_id(
+        deck_id: int,
+        user_id: int,
+        decks_table=Constants.decks_table,
+        cards_table=Constants.cards_table,
+) -> None | tuple[dict,list[dict]]:
     '''Retourne à partir de son id les informations d'un deck, ainsi que toutes les cartes contenues dans ce dernier.
     '''
     #1ère requête pour vérifier si un deck existe pour un utilisateur donné
     cursor = db.query(f'SELECT * FROM {decks_table} WHERE {decks_table}.deck_id = {deck_id} AND {decks_table}.user_id = {user_id};')
     result = cursor.fetchall()
+
     if len(result) == 0:
         return None
+
     else:
         firstRow = result[0]
         #garde les infos du deck dans une variable
-        deckInfos = {'deck_id': firstRow[0], 'name': firstRow[2], 'description': firstRow[3], 'created': firstRow[4]}
+        deckInfos = {
+            'deck_id': firstRow[0],
+            'name': firstRow[2],
+            'description': firstRow[3],
+            'created': firstRow[4]
+        }
         #2ème requête pour obtenir toutes les cartes de ce deck, met les les cartes dans une liste cards
         cursor = db.query(f'SELECT * FROM {cards_table} WHERE {cards_table}.deck_id = {deck_id} AND {cards_table}.user_id = {user_id};')
         result = cursor.fetchall()
         cards = []
+
         for row in result:
-            cards.append({'card_id': row[0], 'front': row[3], 'front_sub': row[4], 'back': row[5], 'back_sub': row[6], 'back_sub2': row[7], 'tag': row[8], 'created': row[9]})
+            cards.append({
+                'card_id': row[0],
+                'front': row[3],
+                'front_sub': row[4],
+                'back': row[5],
+                'back_sub': row[6],
+                'back_sub2': row[7],
+                'tag': row[8],
+                'created': row[9]
+            })
+
         return (deckInfos, cards)
 
 
-def get_card_ids_from_deck_id(deck_id: int, user_id:int = Constants.temp_user_id) -> list[int]:
+def get_card_ids_from_deck_id(
+        deck_id: int,
+        user_id:int = Constants.temp_user_id,
+) -> list[int]:
     '''Retourne tous les identifiants des cartes associées à un deck.
     '''
     deckInfos, cards = get_deck_from_id(deck_id, user_id)
@@ -245,7 +365,14 @@ def get_card_ids_from_deck_id(deck_id: int, user_id:int = Constants.temp_user_id
     return card_ids
 
 
-def add_review_entry(card_id: int, deck_id: int, user_id: int, rating: str, date: datetime | None = None, table = Constants.reviews_table) -> None:
+def add_review_entry(
+        card_id: int,
+        deck_id: int,
+        user_id: int,
+        rating: str,
+        date: datetime | None = None,
+        table = Constants.reviews_table,
+) -> None:
     '''Ajoute une review dans la table reviews pour une carte, avec son deck et son utilisateur donné.
     '''
     #les ratings pouvant être: 'Again', 'Hard', 'Good', 'Easy'
@@ -254,13 +381,20 @@ def add_review_entry(card_id: int, deck_id: int, user_id: int, rating: str, date
     db.query(f'INSERT INTO {table} VALUES ({card_id}, {deck_id}, {user_id}, "{rating}", "{date}");')
 
 
-def forget_card(card_id: int, table = Constants.reviews_table) -> None:
+def forget_card(
+        card_id: int,
+        table = Constants.reviews_table,
+) -> None:
     '''Supprime toutes les reviews dans la table reviews d'une carte donnée.
     '''
     db.query(f"DELETE FROM {table} WHERE card_id = {card_id};")
 
 
-def get_ratings_from_card_id(card_id: int, table = Constants.reviews_table, stringForm: bool = False):
+def get_ratings_from_card_id(
+        card_id: int,
+        table = Constants.reviews_table,
+        stringForm: bool = False,
+) -> list:
     '''Retourne les Rating d'une carte donnée, sous forme de strings ou non. 
     '''
     cursor = db.query(f"SELECT * FROM {table} WHERE card_id = {card_id};")
@@ -273,10 +407,14 @@ def get_ratings_from_card_id(card_id: int, table = Constants.reviews_table, stri
         for row in result:
             dico = {'Again': Rating.Again, 'Hard': Rating.Hard, 'Good': Rating.Good, 'Easy': Rating.Easy}
             ratings.append(dico[row[3]])
+
     return ratings
 
 
-def get_reviews_from_deck_id(deck_id: int, table = Constants.reviews_table) -> dict:
+def get_reviews_from_deck_id(
+        deck_id: int,
+        table = Constants.reviews_table,
+) -> dict:
     '''Retourne les reviews des cartes d'un deck donnée.
     '''
     #l'utilisation d'un dico rend la fonction bien plus intuitive à utiliser et la rend future proof
@@ -284,30 +422,48 @@ def get_reviews_from_deck_id(deck_id: int, table = Constants.reviews_table) -> d
     result = cursor.fetchall()
     reviews = []
     for row in result:
-        reviews.append({'card_id': row[0], 'deck_id': row[1], 'user_id': row[2], 'rating': row[3], 'date': row[4]})
+        reviews.append({
+            'card_id': row[0],
+            'deck_id': row[1],
+            'user_id': row[2],
+            'rating': row[3],
+            'date': row[4]
+        })
+    
     return reviews
 
 
-def get_reviews_from_list(card_ids: list, table = Constants.reviews_table) -> dict:
+def get_reviews_from_list(
+        card_ids: list,
+        deck_id: int, 
+        table = Constants.reviews_table,
+) -> dict:
     '''Retourne les reviews des cartes données dans une liste.
     '''
-    string = f"SELECT * FROM {table} WHERE "
+    string = f"SELECT * FROM {table} WHERE deck_id = {deck_id} AND "
     for card_id in card_ids:
         string += f'card_id = {card_id} OR '
     string = string[:-3] + ';'
+
     cursor = db.query(string)
     reviews = []
     result = cursor.fetchall()
+
     for row in result:
         reviews.append({'card_id': row[0], 'deck_id': row[1], 'user_id': row[2], 'rating': row[3], 'date': row[4]})
+    
     return reviews
 
 
-def test_login(username: str, password: str) -> str:
+def test_login(
+    username: str,
+    password: str,
+) -> str:
     '''Teste des identifiants de connection, renvoie l'user_id sous forme de string si ces derniers sont valides. 
     '''
     cursor = db.query(f'SELECT * FROM users WHERE username = "{username}" AND password = "{password}";')
     result = cursor.fetchall()
+
     if len(result) == 0:
         return None
     else:

@@ -12,6 +12,9 @@
   --clear: #b6a8ff;
   --idkgraph: #312f42;
   --red: #88283c;
+  --orange: #9b5236;
+  --green: #318d57;
+  --blue: #3565ad;
   --brown: #2c1c22;
 }
 
@@ -165,6 +168,21 @@ svg {
   background-color: var(--red);
 }
 
+.boutonHard {
+  color: var(--text);
+  background-color: var(--orange);
+}
+
+.boutonGood {
+  color: var(--text);
+  background-color: var(--green);
+}
+
+.boutonEasy {
+  color: var(--text);
+  background-color: var(--blue);
+}
+
 .bouton:hover {
   transform: translate(0, -3px);
 }
@@ -179,6 +197,18 @@ svg {
 
 .boutonRouge:hover {
   box-shadow: 0 20px 80px -10px var(--red);
+}
+
+.boutonHard:hover {
+  box-shadow: 0 20px 80px -10px var(--orange);
+}
+
+.boutonGood:hover {
+  box-shadow: 0 20px 80px -10px var(--green);
+}
+
+.boutonEasy:hover {
+  box-shadow: 0 20px 80px -10px var(--blue);
 }
 
 .boutons {
@@ -547,6 +577,28 @@ svg {
   justify-content: center;
 }
 
+#reviewBoutons {
+  justify-content: space-between;
+  position: absolute;
+  gap: 10px;
+  bottom: 0;
+  left: 50%;
+  -webkit-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+  margin: 0;
+  display: none;
+}
+
+#montrer {
+  justify-content: center;
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  -webkit-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+  margin: 0;
+}
+
 .changeImg {
   opacity: 0.0; 
   position: absolute; 
@@ -587,6 +639,19 @@ svg {
 .batsu {
   cursor: pointer;
 }
+
+#backReview {
+  display: none;
+  opacity: 0;
+}
+
+
+
+
+
+
+
+
 
 @media screen and (min-width: 1235px) {
   .centrer {

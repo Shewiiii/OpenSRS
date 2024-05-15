@@ -7,4 +7,4 @@ class Constants:
     temp_user_id = 1
     temp_new_cards = 10
     rating_dict = {'Again': Rating.Again, 'Hard': Rating.Hard, 'Good': Rating.Good, 'Easy': Rating.Easy}
-    timezone = 'UTC'
+    timezone = 'Europe/Paris'

@@ -3,25 +3,61 @@
 
 {% block body%}
 <div class="tout">
-    <div class="goback" onclick="redirection('/decklist')">
-        <svg viewBox="0 0 110 160" fill="none">
-            <line x1="105" y1="20" x2="35" y2="85" style="stroke: rgb(255, 255, 255); stroke-width: 10px" />
-            <line x1="35" y1="85" x2="105" y2="150" style="stroke: rgb(255, 255, 255); stroke-width: 10px" />
-        </svg>
+    <div class="flecheConteneur">
+
+        <div class="goback" onclick="redirection('/decklist')">
+            <svg viewBox="0 0 110 160" fill="none">
+                <line x1="105" y1="20" x2="35" y2="85" style="stroke: rgb(255, 255, 255); stroke-width: 10px" />
+                <line x1="35" y1="85" x2="105" y2="150" style="stroke: rgb(255, 255, 255); stroke-width: 10px" />
+            </svg>
+        </div>
     </div>
 
     <p style="padding-left: 20px;padding-top: 0;padding-bottom: 0;">Retour</p>
-    <p>ID : {{ card['card_id'] }}</p>
-    <p>{{ card['front'] }}</p>
-    <p>{{ card['back'] }}</p>
-    <a class="bouton bouton2"
-        href="{{ url_for('rateAgain', deck_id=card['deck_id'], card_id=card['card_id'], rating='Again') }}">Again</a>
-    <a class="bouton bouton2"
-        href="{{ url_for('rateAgain', deck_id=card['deck_id'], card_id=card['card_id'], rating='Hard') }}">Hard</a>
-    <a class="bouton bouton2"
-        href="{{ url_for('rateAgain', deck_id=card['deck_id'], card_id=card['card_id'], rating='Good') }}">Good</a>
-    <a class="bouton bouton2"
-        href="{{ url_for('rateAgain', deck_id=card['deck_id'], card_id=card['card_id'], rating='Easy') }}">Easy</a>
+    
+    <div class="centrer">
+        {% if card == None %}
+        <h3>Félicitations ! Vous avez fini pour le moment.</h3>
+
+        {% else %}
+        <div id="frontReview" style="margin: 0;text-align: center;">
+            <div class="zone">
+                <div class="texte2" style="text-align: center;">
+                    <p class="nomargintop" style=" text-align: left;">ID : {{ card['card_id'] }}</p>
+                    <h3 class="nomargintop">{{ card['front'] }}</h3>
+                    <p>{{ card['front_sub'] }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="backReview" style="margin: 0;">
+            <div style="padding-top: 50px;"></div>
+            <div class="zone">
+                <div class="texte2" style="text-align: center;">
+                    <h3>{{ card['back'] }}</h3>
+                    <p>{{ card['back_sub'] }}</p>
+                    <p class="smalltext">{{ card['back_sub2'] }}</p>
+                    <p class="smalltext">{{ card['tag'] }}</p>
+                </div>
+            </div>
+
+        </div>
+        {% endif %}
+    </div>
+    <div id="montrer" class="boutons">
+        <a class="bouton bouton1" onclick="show()">Afficher
+            la réponse</a>
+    </div>
+    <div id="reviewBoutons" class="boutons">
+        <a class="bouton boutonRouge"
+            href="{{ url_for('rateAgain', deck_id=card['deck_id'], card_id=card['card_id'], rating='Again') }}">Again</a>
+        <a class="bouton boutonHard"
+            href="{{ url_for('rateAgain', deck_id=card['deck_id'], card_id=card['card_id'], rating='Hard') }}">Hard</a>
+        <a class="bouton boutonGood"
+            href="{{ url_for('rateAgain', deck_id=card['deck_id'], card_id=card['card_id'], rating='Good') }}">Good</a>
+        <a class="bouton boutonEasy"
+            href="{{ url_for('rateAgain', deck_id=card['deck_id'], card_id=card['card_id'], rating='Easy') }}">Easy</a>
+    </div>
 </div>
 
 <script>
@@ -33,5 +69,22 @@
             window.location.replace(lien);
         }, 200)
     };
+
+    let montrer = document.getElementById("montrer");
+    let back = document.getElementById("backReview");
+    let rboutons = document.getElementById("reviewBoutons");
+
+    function show() {
+        back.style.display  = 'block';
+        back.style.animation = 'fadeIn 0.2s';
+        back.style.animationFillMode = "forwards";
+
+        montrer.style.animation = 'fadeOut 0.2s';
+        montrer.style.animationFillMode = "forwards";
+        rboutons.style.display  = 'flex';
+        rboutons.style.animation = 'fadeIn 0.2s';
+
+
+    }
 </script>
 {% endblock %}
