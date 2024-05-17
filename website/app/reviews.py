@@ -49,12 +49,12 @@ def get_due_date_from_card_id(
 
 def get_due_card_from_query(result: list):
     now = datetime.now()
-    due_cards = []
+    due_cards = {}
     for card in result:
         due = card[1]
         delta = due - now
         if delta <= timedelta(0):
-            due_cards.append(card[0])
+            due_cards[card[0]] = due
     return due_cards
     
 

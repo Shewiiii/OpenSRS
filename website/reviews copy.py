@@ -32,126 +32,117 @@ def get_ratings_from_card_id(
 def get_due_date_from_card_id(
         card_id: int,
         user_id: int = Constants.temp_user_id,
-        card_table = Constants.cards_table
+        srs_table = Constants.srs_table
 ) -> datetime:
     '''Retourne la date (datetime(timezone.utc)) due d'une carte donnée.
     '''
-    cursor = db.query(f'SELECT created FROM {card_table} WHERE card_id = {card_id} AND user_id = {user_id};')
+    cursor = db.query(f'SELECT due FROM {srs_table}\
+                      WHERE card_id = {card_id}\
+                      AND user_id = {user_id};')
     result = cursor.fetchall()
 
     if len(result) == 0:
         return None
 
     else:
-        created = result[0][0].replace(tzinfo=timezone.utc)
-        card = Carte(created=created)
-        ratings = get_ratings_from_card_id(card_id)
-        for rating in ratings:
-            card.rate(rating)
-    
-    return card.due()
+        return result[0][0].replace(tzinfo=timezone.utc)
 
+def get_due_card_from_query(result: list):
+    now = datetime.now()
+    due_cards = {}
+    for card in result:
+        due = card[1]
+        delta = due - now
+        if delta <= timedelta(0):
+            due_cards[card[0]] = due
+    return due_cards
+    
 
 def get_due_cards_from_deck_id(
         deck_id: int,
         user_id: int = Constants.temp_user_id,
-        card_table = Constants.cards_table
+        srs_table = Constants.srs_table,
 ) -> list[int]:
     '''Retourne toutes les cartes dues d'un deck donnné. 
     '''
-    deckInfos, cards = get_deck_from_id(deck_id, user_id)
-    idnDatetime = {}
-    #quelque chose du style: {1: datetime(...), 2: datetime(...), ...}
-    for card in cards:
-        idnDatetime[card['card_id']] = card['created']
+    cursor = db.query(f'SELECT card_id, due FROM {srs_table} '
+                      f'WHERE deck_id = {deck_id} '
+                      f'AND user_id = {user_id};')
 
-    cursor = db.query(f'SELECT created FROM {card_table} WHERE user_id = {user_id};')
     result = cursor.fetchall()
-    if len(result) == 0:
-        return list(idnDatetime.keys())
+    due_cards = get_due_card_from_query(result)
 
-    else:
-        present = datetime.now(timezone.utc)
-        reviews = get_reviews_from_deck_id(deck_id)
-        '''Exemple de reviews:
-        [
-            (0, 0, 1, 'Good', datetime.datetime(2024, 5, 12, 18, 11, 42)),
-            (1, 0, 1, 'Good', datetime.datetime(2024, 5, 12, 18, 11, 42)),
-            ...
-        ]
-        '''
-        dues = []
-        idk = {}
-
-        for card_id, dt in idnDatetime.items():
-            #ajoute une entrée dans le dico "idk" pour chaque carte du deck, genre {1: {'ratings': [],'created': datetime(..., tzinfo=datetime.timezone.utc)}, 2: {...} }
-            idk[card_id] = {'ratings': [],'created': dt.replace(tzinfo=timezone.utc)}
-
-        for review in reviews:
-            #remplis les listes 'ratings' dans les valeurs, par exemple {1: {'ratings': [Rating.Again, Rating.Good],'created': datetime(...,, tzinfo=datetime.timezone.utc)}, 2: {...} }
-            #datetime correspondant à la création de la carte
-            card_id = review['card_id']
-            idk[card_id]['ratings'].append(Constants.rating_dict[review['rating']])
-
-        for card_id, infos in idk.items():
-            ratings = infos['ratings']
-            card = Carte(created=infos['created'])
-            for rating in ratings:
-                #O(n^2), horrible...
-                card.rate(rating)
-            print(card.due()  - present )
-            if card.due() - present < timedelta(seconds=5):
-                dues.append(card_id)
-
-    return dues
+    return due_cards
 
 
 def get_due_cards_from_list(
     card_ids: list,
-    deck_id: int
+    deck_id: int,
+    user_id: int = Constants.temp_user_id,
+    srs_table = Constants.srs_table,
 ) -> list:
-    cards = get_cards_from_list(card_ids, deck_id)
-
-    if cards == None:
-        return None
-
-    else:
-        idnDatetime = {}
+    '''Retourne toutes les cartes dues d'une liste d'ids donnée. 
+    '''
+    string = (f'SELECT card_id, due FROM {srs_table} '
+              f'WHERE deck_id = {deck_id} '
+              f'AND user_id = {user_id} AND ')
     
-        for card in cards:
-            idnDatetime[card['card_id']] = card['created']
+    for card_id in card_ids:
+        string += f'card_id = {card_id} OR '
+    string = f'{string[:-3]};'
+    
+    cursor = db.query(string)
+    result = cursor.fetchall()
+    due_cards = get_due_card_from_query(result)
 
-        present = datetime.now(timezone.utc)
-        reviews = get_reviews_from_list(card_ids, deck_id)
-        dues = []
-        idk = {}
+    return due_cards
 
-        for card_id, dt in idnDatetime.items():
-            #ajoute une entrée dans le dico "idk" pour chaque carte du deck, genre {1: {'ratings': [],'created': datetime(..., tzinfo=datetime.timezone.utc)}, 2: {...} }
-            idk[card_id] = {'ratings': [],'created': dt.replace(tzinfo=timezone.utc)}
 
-        for review in reviews:
-            #remplis les listes 'ratings' dans les valeurs, par exemple {1: {'ratings': [Rating.Again, Rating.Good],'created': datetime(...,, tzinfo=datetime.timezone.utc)}, 2: {...} }
-            #datetime correspondant à la création de la carte
-            card_id = review['card_id']
-            idk[card_id]['ratings'].append(Constants.rating_dict[review['rating']])
-
-        for card_id, infos in idk.items():
-            ratings = infos['ratings']
-            card = Carte(created=infos['created'])
-            for rating in ratings:
-                #O(n^2), horrible...
-                card.rate(rating)
-            if card.due() - present < timedelta(seconds=5):
-                dues.append(card_id)
-        return dues
-
+def rate_card(
+    card_id: int,
+    deck_id: int,
+    user_id: int,
+    rating: Rating,
+    srs_table: str = Constants.srs_table,
+    reviews_table: str = Constants.reviews_table,
+) -> None:
+    '''Ajoute une review dans la table reviews et replanifie une carte donnée.
+    '''
+    now = datetime.now(timezone.utc)
+    #From db
+    variables = get_card_variables(card_id, user_id)
+    
+    card = Carte()
+    card.set_variables(variables)
+    card.rate_debug(rating)
+    #From class
+    new_variables = card.get_variables()
+    print(variables)
+    print(new_variables)
+    update_card_srs_from_dict(card_id, new_variables, user_id, srs_table=srs_table)
+    
+    state = int(card.card.state)
+    timestamp = int(datetime.timestamp(now)*1000)
+    dico = {
+                Rating.Again: 'Again',
+                Rating.Hard: 'Hard',
+                Rating.Good: 'Good',
+                Rating.Easy: 'Easy',
+    }
+    add_review_entry(
+        card_id,
+        deck_id,
+        user_id,
+        dico[rating],
+        state,
+        timestamp,
+    )
 #POUR TESTS:
 # from random import randint
 # ids = get_all_ids()
 # for id in ids:
 #     for i in range(50):
-#         add_review_entry(id, 0, 1, ['Again', 'Hard', 'Good', 'Easy'][randint(0,3)])
+#         add_review_entry(id, 0, 1, ['Again', 'Hard', 'Good', 'Easy'][randint(0,3)],1,1715977448081)
 
 # ids = get_all_ids()
 # for id in ids:

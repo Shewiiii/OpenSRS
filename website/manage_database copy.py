@@ -114,7 +114,7 @@ def get_img(
 ) -> tuple[int, str]:
     '''Retourne un tuple contenant l'id de l'image dans la table image, et son extension.
     '''
-    cursor = db.query(f'SELECT img_id, extension'
+    cursor = db.query(f'SELECT img_id, extension '
                       f'FROM {table} WHERE deck_id = {deck_id};')
     result = cursor.fetchall()
 
@@ -151,12 +151,14 @@ def delete_deck(
         deck_table: str = Constants.decks_table,
         card_table: str = Constants.cards_table,
         reviews_table: str = Constants.reviews_table,
+        srs_table: str = Constants.srs_table,
 ) -> None:
     '''Supprime un deck, son image et toutes ses cartes associées les tables correspondantes.
     '''
     db.query(f'DELETE FROM {deck_table} WHERE deck_id = {deck_id};')
     db.query(f'DELETE FROM {card_table} WHERE deck_id = {deck_id};')
     db.query(f'DELETE FROM {reviews_table} WHERE deck_id = {deck_id};')
+    db.query(f'DELETE FROM {srs_table} WHERE deck_id = {deck_id};')
     delete_image(deck_id)
 
 
@@ -238,6 +240,7 @@ def get_card_from_card_id(
         row = result[0]
         dico = {
             'card_id': row[0],
+            'user_id': row[1],
             'deck_id': row[2],
             'front': row[3],
             'front_sub': row[4],
@@ -320,7 +323,7 @@ def get_decks_from_user(
     for row in result:
         img_id, extension = get_img(row[0])
         count = db.query(
-            f'SELECT COUNT(front) FROM {cards_table}'
+            f'SELECT COUNT(front) FROM {cards_table} '
             f'WHERE deck_id = {row[0]};'
         ).fetchall()[0][0]
 
@@ -346,8 +349,8 @@ def get_deck_from_id(
     '''Retourne à partir de son id les informations d'un deck, ainsi que toutes les cartes contenues dans ce dernier.
     '''
     # 1ère requête pour vérifier si un deck existe pour un utilisateur donné
-    cursor = db.query(f'SELECT * FROM {decks_table}'
-                      f'WHERE {decks_table}.deck_id = {deck_id}'
+    cursor = db.query(f'SELECT * FROM {decks_table} '
+                      f'WHERE {decks_table}.deck_id = {deck_id} '
                       f'AND {decks_table}.user_id = {user_id};')
     result = cursor.fetchall()
 
@@ -507,12 +510,17 @@ def get_card_variables(
 
 def forget_card(
         card_id: int,
-        table=Constants.reviews_table,
+        reviews_table=Constants.reviews_table,
+        srs_table=Constants.srs_table,
 ) -> None:
     '''Supprime toutes les reviews dans la table reviews d'une carte donnée.
     '''
-    db.query(f"DELETE FROM {table} WHERE card_id = {card_id};")
+    card = get_card_from_card_id(card_id)
+    deck_id, user_id = card['deck_id'], card['user_id']
 
+    db.query(f'DELETE FROM {reviews_table} WHERE card_id = {card_id};')
+    db.query(f'DELETE FROM {srs_table} WHERE card_id = {card_id};')
+    insert_card_srs(card_id, deck_id, user_id, srs_table=srs_table)
 
 def get_ratings_from_card_id(
         card_id: int,

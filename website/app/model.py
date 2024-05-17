@@ -69,8 +69,8 @@ class Carte():
         return self.card.to_dict()
 
     def rate(
-        self, 
-        rating: Rating, 
+        self,
+        rating: Rating,
         now: datetime = datetime.now(timezone.utc)
     ) -> None:
         self.scheduling_cards = f.repeat(self.card, now)
@@ -78,7 +78,7 @@ class Carte():
         self.card = updated_card
 
     def rate_debug(
-        self, 
+        self,
         rating: Rating,
         now: datetime = datetime.now(timezone.utc)
     ) -> None:

@@ -50,13 +50,13 @@
     </div>
     <div id="reviewBoutons" class="boutons">
         <a class="bouton boutonRouge"
-            href="{{ url_for('rateAgain', deck_id=card['deck_id'], card_id=card['card_id'], rating='Again') }}">Again</a>
+            href="{{ url_for('rate', deck_id=card['deck_id'], card_id=card['card_id'], rating='Again') }}">Again</a>
         <a class="bouton boutonHard"
-            href="{{ url_for('rateAgain', deck_id=card['deck_id'], card_id=card['card_id'], rating='Hard') }}">Hard</a>
+            href="{{ url_for('rate', deck_id=card['deck_id'], card_id=card['card_id'], rating='Hard') }}">Hard</a>
         <a class="bouton boutonGood"
-            href="{{ url_for('rateAgain', deck_id=card['deck_id'], card_id=card['card_id'], rating='Good') }}">Good</a>
+            href="{{ url_for('rate', deck_id=card['deck_id'], card_id=card['card_id'], rating='Good') }}">Good</a>
         <a class="bouton boutonEasy"
-            href="{{ url_for('rateAgain', deck_id=card['deck_id'], card_id=card['card_id'], rating='Easy') }}">Easy</a>
+            href="{{ url_for('rate', deck_id=card['deck_id'], card_id=card['card_id'], rating='Easy') }}">Easy</a>
     </div>
 </div>
 
