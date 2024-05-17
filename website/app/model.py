@@ -34,78 +34,68 @@ class Carte():
         0.2702,
         1.6888,
         0.2355,
-        4.4478
+        4.4478,
     )
     # jpdb updated parameters
 
-    def __init__(self, card_id: int = 1, created: datetime = datetime.now(timezone.utc)) -> None:
+    def __init__(
+        self,
+        card_id: int = 1,
+        created: datetime = datetime.now(timezone.utc)
+    ) -> None:
+
         Carte.listeCartes.append(self)
         self.card = Card()
-        self.ratings = []
-        self.startDate = created
         self.scheduling_cards = f.repeat(self.card, created)
         self.card_id = card_id
 
-    def setParameters(
-            self,
-            due: datetime,
-            stability: float,
-            difficulty: float,
-            scheduled_days: int,
-            reps: int,
-            lapses: int,
-            state: State,
-            last_review: datetime = None
+    def set_variables(self, variables: dict) -> None:
+        '''Change les variables de la carte à partir d'un dico de variables.
+        '''
+        self.card.due = variables['due']
+        self.card.stability = variables['stability']
+        self.card.difficulty = variables['difficulty']
+        self.card.elapsed_days = variables['elapsed_days']
+        self.card.scheduled_days = variables['scheduled_days']
+        self.card.reps = variables['reps']
+        self.card.lapses = variables['lapses']
+        self.card.state = variables['state']
+        if variables['last_review']:
+            self.card.last_review = variables['last_review']
+
+    def get_variables(self) -> dict:
+        '''Retourne les variables de la carte sous forme de dictionnaire.
+        '''
+        return self.card.to_dict()
+
+    def rate(
+        self, 
+        rating: Rating, 
+        now: datetime = datetime.now(timezone.utc)
     ) -> None:
+        self.scheduling_cards = f.repeat(self.card, now)
+        updated_card = self.scheduling_cards[rating].card
+        self.card = updated_card
 
-        self.card.due = due
-        self.card.stability = stability
-        self.card.difficulty = difficulty
-        self.card.scheduled_days = scheduled_days
-        self.card.reps = reps
-        self.card.lapses = lapses
-        self.card.state = state
-        if last_review:
-            self.card.last_review = datetime.strptime(
-                last_review, "%Y-%m-%d %H:%M:%S.%f%z")
-
-    def getParameters(self) -> dict:
-        dico = {
-            'due': self.card.due,
-            'stability': self.card.stability,
-            'difficulty': self.card.difficulty,
-            'scheduled_days': self.card.scheduled_days,
-            'reps': self.card.reps,
-            'lapses': self.card.lapses,
-            'state': self.card.state,
-        }
-        try:
-            dico['last_review'] = self.card.last_review
-        except:
-            dico['last_review'] = None
-
-        return dico
-
-    def rate(self, rating: Rating):
-        self.card = self.scheduling_cards[rating].card
-        self.scheduling_cards = f.repeat(self.card, self.card.due)
-        self.ratings.append(rating)
-
-    def rateDebug(self, rating: Rating):
-        Carte.rate(self, rating)
-        print(self.timeBeforeReview())
+    def rate_debug(
+        self, 
+        rating: Rating,
+        now: datetime = datetime.now(timezone.utc)
+    ) -> None:
+        self.rate(rating, now)
+        print(self.time_before_review())
         print(self.card.due)
 
-    def timeBeforeReview(self):
+    def time_before_review(self) -> int:
         delta = self.card.due - datetime.now(timezone.utc)
         return delta.total_seconds()
 
-    def due(self):
+    def due(self) -> datetime:
         return self.card.due
 
-    def resetDueTime(self):
+    def reset_due_time(self) -> None:
         # à utiliser que pour test: reset pas la mémoire de la carte
         self.card.due = datetime.now(timezone.utc)
 
-    def reviewHistory(self, rating: Rating):
+    def review_history(self, rating: Rating) -> int:
         return self.scheduling_cards[rating].review_log.rating

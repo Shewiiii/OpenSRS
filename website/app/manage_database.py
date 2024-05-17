@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from app.secret import Trucs
 from app.constants import Constants
 import re
-from fsrs import Rating
+from fsrs import Rating, State
 from app.model import Carte
 
 
@@ -114,8 +114,8 @@ def get_img(
 ) -> tuple[int, str]:
     '''Retourne un tuple contenant l'id de l'image dans la table image, et son extension.
     '''
-    cursor = db.query(f'SELECT img_id, extension\
-                      FROM {table} WHERE deck_id = {deck_id};')
+    cursor = db.query(f'SELECT img_id, extension'
+                      f'FROM {table} WHERE deck_id = {deck_id};')
     result = cursor.fetchall()
 
     if len(result) == 0:
@@ -136,9 +136,14 @@ def create_deck(
     deck_id = get_free_id(decks_table)
     now = datetime.now()
     created = now.strftime("%Y-%m-%d %H:%M:%S")
-    db.query(f'INSERT INTO {decks_table}\
-            VALUES ({deck_id},{user_id},"{name}",\
-            "{description}","{created}");')
+    db.query(
+        f'INSERT INTO {decks_table} VALUES ('
+        f'{deck_id},'
+        f'{user_id},'
+        f'"{name}",'
+        f'"{description}",'
+        f'"{created}");'
+    )
 
 
 def delete_deck(
@@ -149,14 +154,15 @@ def delete_deck(
 ) -> None:
     '''Supprime un deck, son image et toutes ses cartes associées les tables correspondantes.
     '''
-    db.query(f"DELETE FROM {deck_table},{card_table},{reviews_table}\
-             WHERE deck_id = {deck_id};")
+    db.query(f'DELETE FROM {deck_table} WHERE deck_id = {deck_id};')
+    db.query(f'DELETE FROM {card_table} WHERE deck_id = {deck_id};')
+    db.query(f'DELETE FROM {reviews_table} WHERE deck_id = {deck_id};')
     delete_image(deck_id)
 
 
 def create_card(
-        deck_id = 1,
-        card_id = None,
+        deck_id=1,
+        card_id=None,
         front: str = "front",
         front_sub: str = "front_sub",
         back: str = "back",
@@ -171,27 +177,14 @@ def create_card(
     '''
     if card_id == None:
         card_id = get_free_id()
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     created = now.strftime("%Y-%m-%d %H:%M:%S")
-    db.query(f'INSERT INTO {cards_table}\
-            VALUES ({card_id},{user_id},"{deck_id}",\
-            "{front}","{front_sub}","{back}","{back_sub}",\
-            "{back_sub2}","{tag}","{created}");')
+    db.query(f'INSERT INTO {cards_table} '
+             f'VALUES ({card_id},{user_id},"{deck_id}",'
+             f'"{front}","{front_sub}","{back}","{back_sub}",'
+             f'"{back_sub2}","{tag}","{created}");')
 
-    card = Carte()
-    p = card.getParameters()
-    string = f'INSERT INTO {srs_table}\
-             VALUES ({card_id}, {deck_id}, {user_id}, "{p['due']}",\
-             {p['stability']},{p['difficulty']}, {p['scheduled_days']},\
-             {p['reps']}, {p['lapses']}, "{p['state']}",'
-
-    if p['last_review'] == None:
-        string += "NULL);"
-
-    else:
-        string += f'''"{p['last_review']}");'''
-
-    db.query(string)
+    insert_card_srs(card_id, deck_id, user_id, srs_table=srs_table)
 
 
 def delete_card(
@@ -202,12 +195,13 @@ def delete_card(
 ) -> None:
     '''Supprime toutes les cartes d'un deck donné.
     '''
+
     db.query(f"DELETE FROM {card_table} WHERE card_id = {card_id};")
     db.query(f"DELETE FROM {review_table} WHERE card_id = {card_id};")
     db.query(f"DELETE FROM {srs_table} WHERE card_id = {card_id};")
 
 
-def delete_all_cards(table: str = Constants.cards_table,) -> None:
+def delete_all_cards(table: str = Constants.cards_table) -> None:
     '''Supprime toutes les cartes de tous les decks.
     '''
     ids = get_all_ids(table)
@@ -215,12 +209,18 @@ def delete_all_cards(table: str = Constants.cards_table,) -> None:
         delete_card(card_id)
 
 
-def delete_everything(table: str = Constants.decks_table) -> None:
-    '''Supprime TOUS les decks, leur images et toutes leur cartes associées les tables correspondantes.
+def delete_everything(
+    decks_table: str = Constants.decks_table,
+    card_table: str = Constants.cards_table,
+    review_table: str = Constants.reviews_table,
+    srs_table: str = Constants.srs_table
+) -> None:
+    '''Supprime TOUS les decks, reviews, images et cartes.
     '''
-    ids = get_all_ids(table)
-    for deck_id in ids:
-        delete_deck(deck_id)
+    db.query(f'DELETE FROM {decks_table};')
+    db.query(f'DELETE FROM {card_table};')
+    db.query(f'DELETE FROM {review_table};')
+    db.query(f'DELETE FROM {srs_table};')
 
 
 def get_card_from_card_id(
@@ -245,7 +245,7 @@ def get_card_from_card_id(
             'back_sub': row[6],
             'back_sub2': row[7],
             'tag': row[8],
-            'created': row[9]
+            'created': row[9],
         }
 
         return dico
@@ -259,7 +259,7 @@ def get_cards_from_list(
     '''Retourne les informations d'une carte sous forme d'un dictionnaire 
         à partir d'une liste d'ids.
     '''
-    string = f"SELECT * FROM {table} WHERE deck_id = {deck_id} AND"
+    string = f'SELECT * FROM {table} WHERE deck_id = {deck_id} AND ' 
     for card_id in card_ids:
         string += f'card_id = {card_id} OR '
 
@@ -319,8 +319,11 @@ def get_decks_from_user(
     decks = []
     for row in result:
         img_id, extension = get_img(row[0])
-        count = len(db.query(f'SELECT front FROM {cards_table}\
-                             WHERE deck_id = {row[0]};').fetchall())
+        count = db.query(
+            f'SELECT COUNT(front) FROM {cards_table}'
+            f'WHERE deck_id = {row[0]};'
+        ).fetchall()[0][0]
+
         decks.append({
             'deck_id': row[0],
             'name': row[2],
@@ -343,9 +346,9 @@ def get_deck_from_id(
     '''Retourne à partir de son id les informations d'un deck, ainsi que toutes les cartes contenues dans ce dernier.
     '''
     # 1ère requête pour vérifier si un deck existe pour un utilisateur donné
-    cursor = db.query(f'SELECT * FROM {decks_table}\
-                      WHERE {decks_table}.deck_id = {deck_id}\
-                      AND {decks_table}.user_id = {user_id};')
+    cursor = db.query(f'SELECT * FROM {decks_table}'
+                      f'WHERE {decks_table}.deck_id = {deck_id}'
+                      f'AND {decks_table}.user_id = {user_id};')
     result = cursor.fetchall()
 
     if len(result) == 0:
@@ -361,9 +364,9 @@ def get_deck_from_id(
             'created': firstRow[4]
         }
         # 2ème requête pour obtenir toutes les cartes de ce deck, met les les cartes dans une liste cards
-        cursor = db.query(f'SELECT * FROM {cards_table} \
-                          WHERE {cards_table}.deck_id = {deck_id} \
-                          AND {cards_table}.user_id = {user_id};')
+        cursor = db.query(f'SELECT * FROM {cards_table} '
+                          f'WHERE {cards_table}.deck_id = {deck_id} '
+                          f'AND {cards_table}.user_id = {user_id};')
         result = cursor.fetchall()
         cards = []
 
@@ -400,61 +403,106 @@ def add_review_entry(
         deck_id: int,
         user_id: int,
         rating: str,
-        date: datetime | None = None,
-        table=Constants.reviews_table,
+        state: int,
+        timestamp: int = 0,
+        reviews_table=Constants.reviews_table,
 ) -> None:
-    '''Ajoute une review dans la table reviews pour une carte, avec son deck et son utilisateur donné.
+    '''Ajoute une review dans la table reviews pour une carte,
+        avec son deck et son utilisateur donné.
     '''
     # les ratings pouvant être: 'Again', 'Hard', 'Good', 'Easy'
-    if date == None:
-        date = datetime.now(timezone.utc)
-    db.query(f'INSERT INTO {table} VALUES \
-             ({card_id}, {deck_id}, {user_id}, "{rating}", "{date}");')
+    if timestamp == 0:
+        now = datetime.now(timezone.utc)
+        timestamp = int(datetime.timestamp(now)*1000)
+    db.query(
+        f'INSERT INTO {reviews_table} VALUES '
+        f'({card_id}, {deck_id}, {user_id}, "{rating}", {timestamp}, {state});'
+    )
 
 
-def update_card_srs(
+def update_card_srs_from_dict(
         card_id: int,
-        due: datetime,
-        stability: float,
-        difficulty: float,
-        scheduled_days: int,
-        reps: int,
-        lapses: int,
-        state: str,
-        last_review: datetime,
+        variables: dict,
+        user_id: int = Constants.temp_user_id,
         srs_table: str = Constants.srs_table,
 ) -> None:
-    '''Met à jour l'état de la carte dans la table srs.
+    '''Met à jour l'état d'une carte donnée dans la table srs à partir d'un dico de variables.
     '''
+    assert variables["last_review"], 'Erreur: last_review manquant.'
     db.query(
-        f'UPDATE srs SET card_id = {card_id}, due = "{due}",\
-        stability = {stability},\
-        difficulty = {difficulty},\
-        scheduled_days = {scheduled_days},\
-        reps = {reps},\
-        lapses = {lapses},\
-        state = "{state}",\
-        last_review = "{last_review}"'
+        f'UPDATE {srs_table} SET '
+        f'''due = "{variables['due']}",'''
+        f'stability = {variables["stability"]},'
+        f'difficulty = {variables["difficulty"]},'
+        f'elapsed_days = {variables["elapsed_days"]},'
+        f'scheduled_days = {variables["scheduled_days"]},'
+        f'reps = {variables["reps"]},'
+        f'lapses = {variables["lapses"]},'
+        f'state = {variables["state"]},'
+        f'''last_review = "{variables['last_review']}" '''
+        f'WHERE card_id = {card_id} '
+        f'AND user_id = {user_id};'
     )
 
 
-def update_card_srs(
+def insert_card_srs(
         card_id: int,
-        due: datetime,
-        stability: float,
-        difficulty: float,
-        scheduled_days: int,
-        reps: int,
-        lapses: int,
-        state: str,
-        last_review: datetime,
+        deck_id: int,
+        user_id: int = Constants.temp_user_id,
+        srs_table: str = Constants.srs_table,
 ) -> None:
+    '''Ajoute une entrée dans la table srs 
+        pour une carte et ses valeurs données.
+    '''
+    card = Carte()
+    p = card.card.to_dict()
+
     db.query(
-        f'INSERT INTO srs VALUES \
-        ({card_id},"{due}",{stability},{difficulty},\
-        {scheduled_days},{reps},{lapses},"{state}",\
-        "{last_review}"'
+        f'INSERT INTO {srs_table} VALUES ('
+        f'{card_id},'
+        f'{deck_id},'
+        f'{user_id},'
+        f'"{p['due']}",'
+        f'{p['stability']},'
+        f'{p['difficulty']},'
+        f'{p['elapsed_days']},'
+        f'{p['scheduled_days']},'
+        f'{p['reps']},'
+        f'{p['lapses']},'
+        f'{p['state']},'
+        f'NULL);'
     )
+
+
+def get_card_variables(
+    card_id: int,
+    user_id: int = Constants.temp_user_id,
+    srs_table: str = Constants.srs_table,
+) -> dict:
+    '''Retourne les variables d'une carte donnée à partir de la table srs.
+    '''
+    cursor = db.query(
+        f'SELECT * FROM {srs_table} '
+        f'WHERE card_id = {card_id} '
+        f'AND user_id = {user_id}'
+    )
+    result = cursor.fetchall()
+    row = result[0]
+    variables = {
+        'due': row[3].replace(tzinfo=timezone.utc),
+        'stability': row[4],
+        'difficulty': row[5],
+        'elapsed_days': row[6],
+        'scheduled_days': row[7],
+        'reps': row[8],
+        'lapses': row[9],
+        'state': State(row[10]),
+    }
+    if row[11]:
+        variables['last_review'] = row[11].replace(tzinfo=timezone.utc)
+    else:
+        variables['last_review'] = None
+    return variables
 
 
 def forget_card(
@@ -546,10 +594,13 @@ def test_login(
     username: str,
     password: str,
 ) -> str:
-    '''Teste des identifiants de connection, renvoie l'user_id sous forme de string si ces derniers sont valides. 
+    '''Teste des identifiants de connection,
+        renvoie l'user_id sous forme de string si ces derniers sont valides. 
     '''
     cursor = db.query(
-        f'SELECT * FROM users WHERE username = "{username}" AND password = "{password}";')
+        f'SELECT * FROM users'
+        f'WHERE username = "{username}" AND password = "{password}";'
+    )
     result = cursor.fetchall()
 
     if len(result) == 0:
