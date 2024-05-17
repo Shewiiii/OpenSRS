@@ -69,14 +69,14 @@ class Carte():
             self.card.last_review = datetime.strptime(
                 last_review, "%Y-%m-%d %H:%M:%S.%f%z")
 
-    def getParameters(self):
+    def getParameters(self) -> dict:
         dico = {
             'due': self.card.due,
             'stability': self.card.stability,
             'difficulty': self.card.difficulty,
             'scheduled_days': self.card.scheduled_days,
-            'lapses': self.card.lapses,
             'reps': self.card.reps,
+            'lapses': self.card.lapses,
             'state': self.card.state,
         }
         try:
