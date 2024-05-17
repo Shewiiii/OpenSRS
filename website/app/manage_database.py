@@ -454,7 +454,7 @@ def insert_card_srs(
         user_id: int = Constants.temp_user_id,
         srs_table: str = Constants.srs_table,
 ) -> None:
-    '''Ajoute une entrée dans la table srs 
+    '''Ajoute une entrée dans la table srs
         pour une carte et ses valeurs données.
     '''
     card = Carte()
@@ -465,14 +465,14 @@ def insert_card_srs(
         f'{card_id},'
         f'{deck_id},'
         f'{user_id},'
-        f'"{p['due']}",'
-        f'{p['stability']},'
-        f'{p['difficulty']},'
-        f'{p['elapsed_days']},'
-        f'{p['scheduled_days']},'
-        f'{p['reps']},'
-        f'{p['lapses']},'
-        f'{p['state']},'
+        f'''"{p['due']}",'''
+        f'{p["stability"]},'
+        f'{p["difficulty"]},'
+        f'{p["elapsed_days"]},'
+        f'{p["scheduled_days"]},'
+        f'{p["reps"]},'
+        f'{p["lapses"]},'
+        f'{p["state"]},'
         f'NULL);'
     )
 
