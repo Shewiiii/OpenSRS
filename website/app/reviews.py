@@ -36,9 +36,9 @@ def get_due_date_from_card_id(
 ) -> datetime:
     '''Retourne la date (datetime(timezone.utc)) due d'une carte donnée.
     '''
-    cursor = db.query(f'SELECT due FROM {srs_table}\
-                      WHERE card_id = {card_id}\
-                      AND user_id = {user_id};')
+    cursor = db.query(f'SELECT due FROM {srs_table} '
+                      f'WHERE card_id = {card_id} '
+                      f'AND user_id = {user_id};')
     result = cursor.fetchall()
 
     if len(result) == 0:
@@ -48,14 +48,19 @@ def get_due_date_from_card_id(
         return result[0][0].replace(tzinfo=timezone.utc)
 
 def get_due_card_from_query(result: list):
+    '''Retourne les cartes dues à partir du résultat d'une requête SQL.
+        Organise et trie de plus cette dernière. 
+    '''
     now = datetime.now()
     due_cards = {}
     for card in result:
         due = card[1]
+        state = card[2]
         delta = due - now
         if delta <= timedelta(0):
-            due_cards[card[0]] = due
-    return due_cards
+            due_cards[card[0]] = {'due': due, 'state': state}
+    due_cards = dict(sorted(due_cards.items(), key=lambda item: item[1]['due']))
+    return list(due_cards.keys())
     
 
 def get_due_cards_from_deck_id(
@@ -65,7 +70,7 @@ def get_due_cards_from_deck_id(
 ) -> list[int]:
     '''Retourne toutes les cartes dues d'un deck donnné. 
     '''
-    cursor = db.query(f'SELECT card_id, due FROM {srs_table} '
+    cursor = db.query(f'SELECT card_id, due, state FROM {srs_table} '
                       f'WHERE deck_id = {deck_id} '
                       f'AND user_id = {user_id};')
 
@@ -83,7 +88,7 @@ def get_due_cards_from_list(
 ) -> list:
     '''Retourne toutes les cartes dues d'une liste d'ids donnée. 
     '''
-    string = (f'SELECT card_id, due FROM {srs_table} '
+    string = (f'SELECT card_id, due, state FROM {srs_table} '
               f'WHERE deck_id = {deck_id} '
               f'AND user_id = {user_id} AND ')
     
