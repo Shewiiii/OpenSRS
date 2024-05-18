@@ -14,7 +14,7 @@
     </div>
 
     <p style="padding-left: 20px;padding-top: 0;padding-bottom: 0;">Retour</p>
-    
+
     <div class="centrer">
         {% if card == None %}
         <h3>Félicitations ! Vous avez fini pour le moment.</h3>
@@ -29,7 +29,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div id="backReview" style="margin: 0;">
             <div style="padding-top: 50px;"></div>
             <div class="zone">
@@ -47,6 +47,14 @@
     <div id="montrer" class="boutons">
         <a class="bouton bouton1" onclick="show()">Afficher
             la réponse</a>
+    </div>
+    <div id="state">
+        <div>
+            <span class="new">{{ new }}</span>
+        </div>
+        <div>
+            <span class="review">{{ review }}</span>
+        </div>
     </div>
     <div id="reviewBoutons" class="boutons">
         <a class="bouton boutonRouge"
@@ -75,13 +83,13 @@
     let rboutons = document.getElementById("reviewBoutons");
 
     function show() {
-        back.style.display  = 'block';
+        back.style.display = 'block';
         back.style.animation = 'fadeIn 0.2s';
         back.style.animationFillMode = "forwards";
 
         montrer.style.animation = 'fadeOut 0.2s';
         montrer.style.animationFillMode = "forwards";
-        rboutons.style.display  = 'flex';
+        rboutons.style.display = 'flex';
         rboutons.style.animation = 'fadeIn 0.2s';
 
 

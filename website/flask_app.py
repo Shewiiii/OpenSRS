@@ -1,4 +1,4 @@
-from flask import Flask, render_template, flash, redirect,request, session, make_response
+from flask import Flask, render_template, flash, redirect, request, session, make_response
 from app.config import Config
 from app.card_form import Cardform
 from app.deck_form import Deckform
@@ -9,6 +9,7 @@ import re
 import pathlib
 import os
 import json
+import pendulum
 
 
 app = Flask(__name__)
@@ -44,9 +45,9 @@ def decklist():
         'extension': '.jpg'
     }]
     '''
-    #enlève les cookies de session des cartes
-    response = make_response(render_template('decklist.html', title='Liste de decks', decks=decks))
-    response.set_cookie('session_cards', '', expires=0)
+    # enlève les cookies de session des cartes
+    response = make_response(render_template(
+        'decklist.html', title='Liste de decks', decks=decks))
 
     return response
 
@@ -79,18 +80,18 @@ def deckPage(deck_id):
 
     return render_template(
         'deck.html',
-        title = deckInfo['name'],
-        deckInfo = deckInfo,
-        cards = cards,
-        img_id = img_id,
-        extension = extension
+        title=deckInfo['name'],
+        deckInfo=deckInfo,
+        cards=cards,
+        img_id=img_id,
+        extension=extension
     )
 
 
 @app.route('/deck/<deck_id>/add', methods=['GET', 'POST'])
 def cardform(deck_id):
     form = Cardform()
-    name = get_deck_from_id(deck_id,1)[0]['name']
+    name = get_deck_from_id(deck_id, 1)[0]['name']
 
     if form.validate_on_submit():
         front = form.front.data
@@ -99,7 +100,7 @@ def cardform(deck_id):
         back_sub = form.back_sub.data
         back_sub2 = form.back_sub2.data
         tag = form.tag.data
-    
+
         create_card(
             deck_id,
             None,
@@ -112,27 +113,27 @@ def cardform(deck_id):
             user_id=1,
         )
         flash(f'La carte {front} a bien été enregistré dans le deck {name} !')
-    
+
         return redirect(f'/deck/{deck_id}/add')
 
     return render_template(
         'addCard.html',
         title='Créer une carte',
-        form = form,
-        name = name,
-        deck_id = deck_id,
+        form=form,
+        name=name,
+        deck_id=deck_id,
     )
 
 
 @app.route('/deck/<deck_id>/delete')
 def delete(deck_id):
-    name = get_deck_from_id(deck_id,1)[0]['name']
+    name = get_deck_from_id(deck_id, 1)[0]['name']
 
     return render_template(
         'deleteDeck.html',
-        title = f'Supprimer {name}',
-        deck_id = deck_id,
-        )
+        title=f'Supprimer {name}',
+        deck_id=deck_id,
+    )
 
 
 @app.route('/deck/<deck_id>/delete/confirm', methods=['GET', 'POST'])
@@ -154,8 +155,8 @@ def deckform():
 
     return render_template(
         'addDeck.html',
-        title = 'Créer un deck',
-        form = form)
+        title='Créer un deck',
+        form=form)
 
 
 @app.route('/deck/<deck_id>', methods=['GET', 'POST'])
@@ -166,15 +167,16 @@ def changeImg(deck_id):
         extension = os.path.splitext(filename)[1]
 
         img_id = add_image(deck_id, extension)
-        path = pathlib.Path(__file__).parents[0] / 'static/img/uploads' / f'{img_id}{extension}'
-        
+        path = pathlib.Path(
+            __file__).parents[0] / 'static/img/uploads' / f'{img_id}{extension}'
+
         f.save(path)
 
         return redirect(f'{deck_id}')
 
 
 @app.route('/deck/<deck_id>/<card_id>/delete', methods=['GET', 'POST'])
-def deleteCard(card_id,deck_id):
+def deleteCard(card_id, deck_id):
     delete_card(card_id)
 
     return redirect(f'/deck/{deck_id}')
@@ -182,60 +184,113 @@ def deleteCard(card_id,deck_id):
 
 @app.route('/deck/<deck_id>/review')
 def review(deck_id):
-    dueCards = get_due_cards_from_deck_id(deck_id, user_id=1)
+    # gère limite de nouvelles cartes:
+    if f'NEW_CARDS_COUNT{deck_id}' in request.cookies:
+        new_cards_count = int(request.cookies.get(f'NEW_CARDS_COUNT{deck_id}'))
+        first_review = False
 
-    #choisit carte à review:
-    if len(dueCards) == 0:
+    else:
+        new_cards_count = 0
+        first_review = True
+
+    due_cards_srs = get_cards_srs_to_review_from_deck_id(
+        deck_id,
+        new_cards_mode=Constants.new_cards_mode,
+        new_cards_limit=Constants.new_cards_limit - new_cards_count,
+    )
+    due_count = len(due_cards_srs)
+
+    # choisit carte à review:
+    if due_count == 0:
         card = None
     else:
-        card_id = dueCards[0]
+        card_id = due_cards_srs[0]['card_id']
         card = get_card_from_card_id(card_id)
 
-    return render_template('review.html', title='Review', card=card)
+    # ajoute des stats: get_stats(due_cards_srs)
+    stats = get_review_stats(due_cards_srs)
+    new_cards_remaining = stats['new']
+    review_cards_remaining = stats['review']
+
+    # réponse:
+    response = make_response(render_template(
+        'review.html',
+        title='Review',
+        card=card,
+        new=new_cards_remaining,
+        review=review_cards_remaining,
+            
+    ))
+    if first_review:
+        response.set_cookie(
+            f'NEW_CARDS_COUNT{deck_id}',
+            '0',
+            expires=pendulum.tomorrow(Constants.timezone),
+        )
+
+    return response
 
 
 @app.route('/deck/<deck_id>/review/<card_id>/<rating>')
-def rate(deck_id,card_id,rating):
+def rate(deck_id, card_id, rating):
     rating = Constants.rating_dict[rating]
-    rate_card(card_id, deck_id, Constants.temp_user_id, rating)
+    state = rate_card(card_id, deck_id, Constants.temp_user_id, rating)
+    
+    if state == State.New:
+        print('gneb drfothrdtlnitip')
+        response = make_response(redirect(f'/deck/{deck_id}/review'))
+        new = int(request.cookies.get(f'NEW_CARDS_COUNT{deck_id}'))
+        response.set_cookie(f'NEW_CARDS_COUNT{deck_id}',
+                           str(new + 1),
+                           expires=datetime.now() + timedelta(days=30))
+        return response
 
-    return redirect(f'/deck/{deck_id}/review')
+    else:
+        return redirect(f'/deck/{deck_id}/review')
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    msg='bouh'
+    msg = 'bouh'
     print(request.form)
     if request.method == 'POST' and 'username' in request.form and 'password' in request.form:
         username = request.form['username']
         password = request.form['password']
         """ hash = password + app.secret_key
         hash = hashlib.sha1(hash.encode()) # encode le password
-        password = hash.hexdigest()""" 
+        password = hash.hexdigest()"""
 
         testLogin = test_login(username, password)
-        #None si connection échouée, user_id sinon
+        # None si connection échouée, user_id sinon
 
         if testLogin != None:
             response = make_response(redirect('/decklist'))
-            response.set_cookie('user_id', testLogin, expires=datetime.now() + timedelta(days=30))
-            response.set_cookie('connected', 'True', expires=datetime.now() + timedelta(days=30))
-            response.set_cookie('username', username, expires=datetime.now() + timedelta(days=30))
-            response.set_cookie('password', password, expires=datetime.now() + timedelta(days=30))
-
+            response.set_cookie('USER_id', testLogin,
+                                expires=datetime.now() + timedelta(days=30))
+            response.set_cookie('CONNECTED', 'True',
+                                expires=datetime.now() + timedelta(days=30))
+            response.set_cookie('USERNAME', username,
+                                expires=datetime.now() + timedelta(days=30))
+            response.set_cookie('PASSWORD', password,
+                                expires=datetime.now() + timedelta(days=30))
 
             return response
-        
+
         else:
             msg = 'username ou mot de passe incorrect'
 
-    return render_template('login.html',title = 'Connexion'+msg,msg=msg)
+    return render_template('login.html', title='Connexion'+msg, msg=msg)
+
 
 @app.route('/logout')
 def logout():
-    session.pop('connecte', None)
-    session.pop('user_id', None)
-    session.pop('username', None)
+    response = make_response(redirect('/login'))
+
+    response.set_cookie('USER_ID', '', expires=0)
+    response.set_cookie('CONNECTED', '', expires=0)
+    response.set_cookie('USERNAME', '', expires=0)
+    response.set_cookie('PASSWORD', '', expires=0)
+
     return redirect('/login')
 
 # @app.route('/register')
@@ -269,6 +324,7 @@ def logout():
 #         msg = 'Veuillez remplir les champs manquants'
 
 #     return render_template('/', msg=msg)
+
 
 if __name__ == "__main__":  # toujours à la fin!
     app.run(debug=True)

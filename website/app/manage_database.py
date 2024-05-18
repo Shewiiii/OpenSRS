@@ -262,7 +262,7 @@ def get_cards_from_list(
     '''Retourne les informations d'une carte sous forme d'un dictionnaire 
         à partir d'une liste d'ids.
     '''
-    string = f'SELECT * FROM {table} WHERE deck_id = {deck_id} AND ' 
+    string = f'SELECT * FROM {table} WHERE deck_id = {deck_id} AND '
     for card_id in card_ids:
         string += f'card_id = {card_id} OR '
 
@@ -522,6 +522,7 @@ def forget_card(
     db.query(f'DELETE FROM {srs_table} WHERE card_id = {card_id};')
     insert_card_srs(card_id, deck_id, user_id, srs_table=srs_table)
 
+
 def get_ratings_from_card_id(
         card_id: int,
         table=Constants.reviews_table,
@@ -595,7 +596,40 @@ def get_reviews_from_list(
             'date': row[4]
         })
 
-    return reviews
+
+def get_cards_srs_from_deck_id(
+    deck_id: int,
+    user_id: int = Constants.temp_user_id,
+    table=Constants.srs_table
+) -> dict:
+    '''Retourne un dictionnaire contenant les informations srs des cartes d'un deck donné.
+    '''
+    cards_srs = []
+    cursor = db.query(f'SELECT * FROM {table} '
+                      f'WHERE deck_id = {deck_id} '
+                      f'AND user_id = {user_id};')
+    result = cursor.fetchall()
+    for card in result:
+        card_dict = {
+            'card_id': card[0],
+            'deck_is': card[1],
+            'user_id': card[2],
+            'due': card[3],
+            'stability': card[4],
+            'difficulty': card[5],
+            'elapsed_days': card[6],
+            'scheduled_days': card[7],
+            'reps': card[8],
+            'lapses': card[9],
+            'state': card[10],
+        }
+        if card[11]:
+            card_dict['last_review'] = card[11]
+        else:
+            card_dict['last_review'] = None
+        cards_srs.append(card_dict)
+
+    return cards_srs
 
 
 def test_login(

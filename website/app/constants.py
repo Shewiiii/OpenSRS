@@ -9,3 +9,5 @@ class Constants:
     temp_new_cards = 10
     rating_dict = {'Again': Rating.Again, 'Hard': Rating.Hard, 'Good': Rating.Good, 'Easy': Rating.Easy}
     timezone = 'Europe/Paris'
+    new_cards_limit = 10
+    new_cards_mode = 'shuffle'

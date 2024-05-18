@@ -11,9 +11,11 @@
   --accent: #513ac5;
   --clear: #b6a8ff;
   --idkgraph: #312f42;
+  --clear-red: #b9445c;
   --red: #88283c;
   --orange: #9b5236;
   --green: #318d57;
+  --clear-blue: #3d72c2;
   --blue: #3565ad;
   --brown: #2c1c22;
 }
@@ -217,6 +219,12 @@ svg {
   justify-content: left;
   gap: 2em;
   margin: 2rem 6rem;
+}
+
+.deckBarre {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
 }
 
 .cards {
@@ -587,6 +595,30 @@ svg {
   transform: translate(-50%, -50%);
   margin: 0;
   display: none;
+}
+
+#state {
+  display: flex;
+  justify-content: space-between;
+  flex-direction: row;
+  position: absolute;
+  gap: 10px;
+  bottom: 5rem;
+  left: 50%;
+  -webkit-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+  margin: 0;
+  font-weight: 600;
+}
+
+.new {
+  font-size: 1.2rem;
+  color: var(--clear-red);
+}
+
+.review {
+  font-size: 1.2rem;
+  color: var(--clear-blue);
 }
 
 #montrer {
