@@ -6,7 +6,6 @@ import re
 from fsrs import Rating, State
 from app.model import Carte
 
-
 class DB:
     # en gros: se connecte à la base de données quand nécessaire, pas de pb d'actualisation comme ça
     conn = None
@@ -127,13 +126,15 @@ def get_img(
 
 def create_deck(
         user_id: str = Constants.temp_user_id,
+        deck_id: int | None = None,
         name: str = 'name',
         description: str = 'description',
         decks_table: str = Constants.decks_table,
 ) -> None:
     '''Crée un deck associé à un utilisateur en ajoutant une entrée dans la table decks.
     '''
-    deck_id = get_free_id(decks_table)
+    if deck_id == None:
+        deck_id = get_free_id(decks_table)
     now = datetime.now()
     created = now.strftime("%Y-%m-%d %H:%M:%S")
     db.query(
@@ -311,12 +312,14 @@ def get_deck_list_from_user(
 
 
 def get_decks_from_user(
-        user_id=Constants.temp_user_id,
-        table=Constants.decks_table,
-        cards_table=Constants.cards_table,
+    request,
+    user_id=Constants.temp_user_id,
+    table=Constants.decks_table,
+    cards_table=Constants.cards_table,
 ) -> dict:
     '''Retourne tous les decks associé à un utilisateur, à partir de son id, sous forme d'un dictionnaire.
     '''
+    from app.reviews import get_cards_srs_to_review_from_deck_id,get_review_stats
     cursor = db.query(f'SELECT * FROM {table} WHERE user_id = {user_id};')
     result = cursor.fetchall()
     decks = []
@@ -327,14 +330,28 @@ def get_decks_from_user(
             f'WHERE deck_id = {row[0]};'
         ).fetchall()[0][0]
 
+        deck_id = row[0]
+        if f'NEW_CARDS_COUNT{deck_id}' in request.cookies:
+            new_cards_count = int(request.cookies.get(f'NEW_CARDS_COUNT{deck_id}'))
+        else:
+            new_cards_count = 0
+        due_cards_srs = get_cards_srs_to_review_from_deck_id(
+            deck_id,
+            new_cards_mode=Constants.new_cards_mode,
+            new_cards_limit=Constants.new_cards_limit - new_cards_count,
+        )
+        stats = get_review_stats(due_cards_srs)
+        
         decks.append({
-            'deck_id': row[0],
+            'deck_id': deck_id,
             'name': row[2],
             'description': row[3],
             'created': row[4],
             'card_count': count,
             'img_id': img_id,
-            'extension': extension
+            'extension': extension,
+            'new': stats['new'],
+            'review': stats['review'],
         })
 
     return decks

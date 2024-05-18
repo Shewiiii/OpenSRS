@@ -397,7 +397,7 @@ svg {
 }
 
 .texteDeck > .pdescription {
-  padding-bottom: 20px;
+  padding-bottom: 10px;
 }
 
 .texteDeck > h4 {
@@ -612,13 +612,13 @@ svg {
 }
 
 .new {
-  font-size: 1.2rem;
-  color: var(--clear-red);
+  font-size: 1.15rem;
+  color: var(--clear-blue);
 }
 
 .review {
-  font-size: 1.2rem;
-  color: var(--clear-blue);
+  font-size: 1.15rem;
+  color: var(--clear-red);
 }
 
 #montrer {

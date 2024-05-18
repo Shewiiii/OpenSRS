@@ -24,7 +24,7 @@
             <div class="zone">
                 <div class="texte2" style="text-align: center;">
                     <p class="nomargintop" style=" text-align: left;">ID : {{ card['card_id'] }}</p>
-                    <h3 class="nomargintop">{{ card['front'] }}</h3>
+                    <h4 class="nomargintop">{{ card['front'] }}</h4>
                     <p>{{ card['front_sub'] }}</p>
                 </div>
             </div>
@@ -33,12 +33,13 @@
         <div id="backReview" style="margin: 0;">
             <div style="padding-top: 50px;"></div>
             <div class="zone">
-                <div class="texte2" style="text-align: center;">
-                    <h3>{{ card['back'] }}</h3>
-                    <p>{{ card['back_sub'] }}</p>
-                    <p class="smalltext">{{ card['back_sub2'] }}</p>
-                    <p class="smalltext">{{ card['tag'] }}</p>
+                <div class="texte2">
+                    <p>{{ card['tag'] }}</p>
+                    <h4 class="nomargintop" style="text-align: center;">{{ card['back'] }}</h4>
+                    <p style="text-align: center;">{{ card['back_sub'] }}</p>
+                    <p>{{ card['back_sub2'] }}</p>
                 </div>
+
             </div>
 
         </div>

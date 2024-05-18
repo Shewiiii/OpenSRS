@@ -170,12 +170,8 @@ def rate_card(
     card.rate_debug(rating)
     # From class
     new_variables = card.get_variables()
-    update_card_srs_from_dict(
-        card_id, 
-        new_variables,
-        user_id, 
-        srs_table=srs_table
-    )
+    update_card_srs_from_dict(card_id, new_variables,
+                              user_id, srs_table=srs_table)
 
     state = int(card.card.state)
     timestamp = int(datetime.timestamp(now)*1000)
@@ -192,7 +188,6 @@ def rate_card(
         dico[rating],
         state,
         timestamp,
-        reviews_table=reviews_table,
     )
     
     return og_state
@@ -227,5 +222,6 @@ def get_review_stats(
 # ids = get_all_ids()
 # for id in ids:
 #     forget_card(id)
+
 # for i in range(30):
 #    create_card(deck_id=0)

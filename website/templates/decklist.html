@@ -29,12 +29,17 @@
         <div class="texteDeck">
             <h4>{{ deck['name'] }}</h4>
             <p class="pdescription">{{ deck['description'] }}</p>
+            <span class="new">{{ deck['new'] }}</span>
+            <span class="review">{{ deck['review'] }}</span>
+
             <p class="smalltext">Nombre de cartes: {{ deck['card_count'] }}</p>
             <p class="smalltext">Créé: {{ deck['created'] }}</p>
             <p class="smalltext">ID: {{ deck['deck_id'] }}</p>
         </div>
     </div>
     {% endfor %}
+</div>
+
 
 </div>
 <script>

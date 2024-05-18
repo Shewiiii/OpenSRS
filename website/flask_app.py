@@ -33,7 +33,7 @@ def home(name):
 
 @app.route('/decklist')
 def decklist():
-    decks = get_decks_from_user(user_id=1)
+    decks = get_decks_from_user(request, user_id=1)
     '''Exemple:
     [{
         'deck_id': 0,
@@ -45,7 +45,7 @@ def decklist():
         'extension': '.jpg'
     }]
     '''
-    # enlève les cookies de session des cartes
+    
     response = make_response(render_template(
         'decklist.html', title='Liste de decks', decks=decks))
 

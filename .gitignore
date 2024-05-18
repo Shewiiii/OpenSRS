@@ -1,6 +1,8 @@
 #fichier dans lequel des codes etc sont stockés
-code/config.py
+config.py
 .venv
 .vscode
+*.pyc
 secret.py
-website/app/__pycache__/*
+__pycache__/*
+website/app/config.py
