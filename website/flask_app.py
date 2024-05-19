@@ -242,7 +242,7 @@ def rate(deck_id, card_id, rating):
         new = int(request.cookies.get(f'NEW_CARDS_COUNT{deck_id}'))
         response.set_cookie(f'NEW_CARDS_COUNT{deck_id}',
                            str(new + 1),
-                           expires=datetime.now() + timedelta(days=30))
+                           expires=pendulum.tomorrow(Constants.timezone))
         return response
 
     else:
