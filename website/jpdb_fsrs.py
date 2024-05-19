@@ -73,13 +73,13 @@ def jpdb_import(
             json_filename (str): Le nom du json contenant tout
             l'historique d'un utilisateur de jpdb 
             (téléchargable dans les options).
-            
+
             deck_name (str): Le nom du deck à créer sur OpenSRS.
-            
+
             deck_description (str): Sa description.
-            
+
             user_id (int): l'id de l'utilisateur propriétaire du deck.
-            
+
             directory_path (pathlib ou string): chemin vers le 
             dossier contenant le fichier json. 
 
@@ -87,7 +87,7 @@ def jpdb_import(
         json_filename='15-05-24 review history.json',
         deck_name='jpdb',
         deck_description=(
-            '19/05/2024, deck importé de jpdb.'
+            '19/05/2024, deck importé de jpdb. '
             'Contient les mots déjà étudiés'))
     '''
     try:
@@ -122,7 +122,6 @@ def jpdb_import(
 
     # Parcourt le json
     for word_entry in review_history:
-        
 
         card_id = get_free_id(table=Constants.cards_table)
 
@@ -133,7 +132,6 @@ def jpdb_import(
         # Vérifie si le mot est pas déjà dans le deck (si existe)
         if exists and word in processed_words:
             print(f'Mot déjà présent sauté: {word}')
-
         else:
             # Requête vers jpdb:
             # Récupère la lecture, définition, phrases et le pitch accent du mot
@@ -152,8 +150,9 @@ def jpdb_import(
                 try:
                     rating = rating_dict[review['grade']]
                     card_srs.rate(rating, now=date)
-                except:
-                    print('Skipped a rating: not in dict')
+                    add_review_entry(card_id, deck_id, user_id, rating)
+                except Exception as e:
+                    print('Error', e)
             variables = card_srs.get_variables()
 
             # Intègre tout dans OpenSRS
