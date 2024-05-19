@@ -5,7 +5,7 @@ import time
 import re
 
 
-def request(url: str, cookie: dict) -> BeautifulSoup:
+def request(url: str, cookie: dict | None = None) -> BeautifulSoup:
     '''Crée une instance BeautifulSoup à partir d'un url.
 
         Paramètres:
@@ -13,7 +13,10 @@ def request(url: str, cookie: dict) -> BeautifulSoup:
             cookie (dict): Cookies à charger (ex: {'sid': [UN STRING]}).
     '''
     print(f'request: {url}')
-    raw = requests.get(url, cookies=cookie)
+    if cookie:
+        raw = requests.get(url, cookies=cookie)
+    else:
+        raw = requests.get(url)
     raw.encoding = 'UTF-8'
     return BeautifulSoup(raw.text, features='html.parser')
 
@@ -64,7 +67,7 @@ def import_deck(
     description: str = 'Ceci est un deck importé de jpdb.',
     user_id: str = Constants.temp_user_id,
     parameters: str = '&show_only=new&sort_by=by-frequency-global',
-) -> None:
+) -> list:
     '''Importe un deck présent sur jpdb vers OpenSRS.
 
         Paramètres:
@@ -83,6 +86,12 @@ def import_deck(
             description (str): Description dur deck sur OpenSRS.
 
             user_id (int): L'id de l'utilisateur propriétaire du deck.
+
+        Retourne:
+            cards (dict): Une liste contenant un dictionnaire 
+            pour chacune des cartes.
+            Les clés sont: 'vid', 'word', 'meanings', 'reading',
+            'jp_sentence', 'en_sentence', 'pitchaccent'.
     '''
     if name == 'Deck jpdb importé':
         name += f' {jpdb_deck_id}'
@@ -107,7 +116,7 @@ def import_deck(
                 ).find('a')
 
                 word = a.text
-                word_id = re.findall(r'\d+', a['href'])[0]
+                vid = re.findall(r'\d+', a['href'])[0]
 
                 raw_a = str(a)
                 reading = ''
@@ -121,7 +130,7 @@ def import_deck(
                     meanings[i] = meanings[i].strip()
 
                 jpdb_words.append({
-                    'word_id': word_id,
+                    'vid': vid,
                     'word': word,
                     'meanings': meanings,
                     'reading': reading,
@@ -136,7 +145,7 @@ def import_deck(
     # (phrase, phrase traduite...pitch accent ?)
     cards = []
     for word in jpdb_words:
-        url = f'https://jpdb.io/vocabulary/{word['word_id']}/{word['word']}'
+        url = f'https://jpdb.io/vocabulary/{word['vid']}/{word['word']}'
 
         raw = request(url, cookie)
         example = raw.find('div', {'class': 'subsection-examples'})
@@ -185,29 +194,88 @@ def import_deck(
             back_sub=card['en_sentence'],
             back_sub2=f'Pitch Accent: {card['pitchaccent']}',
             tag='jpdb',
-            
+
         )
     return cards
 
 
-# DELETE
-# import_deck(
-#     sid='89d5db349b4a16dbf792a34116236bdf',
-#     jpdb_deck_id=151,
-#     cards_count=5,
-# )
+def get_card_from_jpdb(
+    vid: int,
+    word: str,
+    deck_id: int,
+) -> dict:
+    '''Crée un dictionnaire card à partir de jpdb.
 
-# raw = BeautifulSoup('<div style="word-break: keep-all; display: flex;"><div style="display: flex; background-image: linear-gradient(to bottom,var(--pitch-high-s),var(--pitch-high-e)); padding-top: 2px; margin-bottom: 2px; margin-right: -2px; padding-right: 2px;"><div style="background-color: var(--background-color); padding-right: 2px;">け</div></div><div style="display: flex; background-image: linear-gradient(to top,var(--pitch-low-s),var(--pitch-low-e)); padding-bottom: 2px; margin-top: 2px;  padding-left: 2px;"><div style="background-color: var(--background-color); padding-left: 1px;">っしん</div></div></div>', features='html.parser')
-# divs = raw.find_all('div')
-# moras = []
-# pitchaccent_pattern = ''
-# for div in divs:
-#     style = div['style']
-#     if 'linear-gradient' in style:
-#         moras.append(div)
-# for mora in moras:
-#     if '--pitch-high-s' in str(mora):
-#         pitchaccent_pattern += 'H'
-#     elif '--pitch-low-s' in str(mora):
-#         pitchaccent_pattern += 'L'
-# print(pitchaccent_pattern)
+        Paramètre:
+            vid (int): l'id d'un mot sur jpdb , trouvable dans l'url.
+            word (str): une forme du mot associé à ce vid.
+            deck_id (int): l'id du deck auquel la carte doit être associé.
+
+        Retourne:
+            card (dict): Contient les éléments suivants:
+
+                'deck_id': L'id du deck mise en paramètre.
+
+                'word': Le mot en japonais.
+                
+                'vid': L'id d'un mot sur jpdb , trouvable dans l'url.
+                
+                'reading': La lecture du mot en kana.
+                
+                'meanings': La/les définition(s) du mot.
+
+                'jp_sentence': La première phrase d'exemple présente sur la page
+                du mot sur jpdb, en japonais (si disponible).
+                
+                'en_sentence': La traduction de la phrase en Anglais (si disponible).
+
+                'pitchaccent': Le pitch accent du mot.
+                (ex: LHHH pour un mot Heiban à 4 mores)
+    '''
+    url = f'https://jpdb.io/vocabulary/{vid}/{word}'
+
+    raw = request(url)
+    
+    raw_spelling = str(raw.find('div', {'class': 'primary-spelling'}))
+    reading = ''
+    for letter in raw_spelling:
+        if 12354 <= ord(letter) <= 12538:
+            reading += letter
+
+    meanings = []
+    raw_meanings = raw.find('div', {'class': 'subsection-meanings'})
+    raw_meanings = raw_meanings.find_all('div', {'class': 'description'})
+    for meaning in raw_meanings:
+        meanings.append(meaning.text)
+        
+    example = raw.find('div', {'class': 'subsection-examples'})
+
+    jp_sentence = example.find('div', {'class': 'jp'})
+    if jp_sentence:
+        jp_sentence = jp_sentence.text
+    else:
+        jp_sentence = ''
+
+    en_sentence = example.find('div', {'class': 'en'})
+    if en_sentence:
+        en_sentence = en_sentence.text
+    else:
+        en_sentence = ''
+
+    pitchaccent_div = raw.find(
+        'div', {'style': 'word-break: keep-all; display: flex;'})
+    pitchaccent = get_pitchaccent_pattern_from_div(pitchaccent_div)
+
+    card = {
+        'deck_id': deck_id,
+        'word': word,
+        'vid': vid,
+        'reading' : reading,
+        'meanings' : meanings,
+        'jp_sentence': jp_sentence,
+        'en_sentence': en_sentence,
+        'pitchaccent': pitchaccent,
+    }
+    
+    return card
+
