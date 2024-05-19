@@ -5,7 +5,8 @@ from app.constants import Constants
 import re
 from fsrs import Rating, State
 from app.model import Carte
-
+import os
+import pathlib
 
 class DB:
     # en gros: se connecte à la base de données quand nécessaire, pas de pb d'actualisation comme ça
@@ -91,34 +92,36 @@ def add_image(
 
         Retourne l'id de l'image dans la table images.
     '''
-    sql = f"""SELECT img_id FROM {table} WHERE deck_id = %s"""
-    cursor = db.query(sql, (deck_id))
-    result = cursor.fetchall()
-
-    if len(result) != 0:
-        print(f"image déjà existante à l'ID {result[0][0]}, remplacage..")
-        sql = f"""UPDATE {table} SET extension = %s WHERE deck_id = %s;"""
-        db.query(sql, (extension, deck_id))
-        return result[0][0]
-
+    img_id, _ = get_img(deck_id)
+    if img_id == None:
+        img_id = get_free_id(table=table)
     else:
-        img_ig = get_free_id(table=table)
-        sql = f"""INSERT INTO {table} VALUES (%s,%s,%s);"""
-        db.query(sql, (img_ig, deck_id, extension))
+        print(f"Image déjà existante à l'ID {img_id}, remplacage..")
+        try:
+            delete_image(deck_id)
+        except:
+            print('Erreur, image corrompue.')
 
-        return img_ig
+    sql = f"""INSERT INTO {table} VALUES (%s,%s,%s);"""
+    db.query(sql, (img_id, deck_id, extension))
+
+    return img_id
 
 
 def delete_image(deck_id: int) -> None:
     '''Supprime dans la table images l'entrée d'une image d'un deck donné. 
     '''
+    img_id, extension = get_img(deck_id)
+    path = (pathlib.Path(__file__).parents[1] / 'static/img/uploads'
+            / f'{img_id}{extension}')
+    os.remove(path)
     db.query("""DELETE FROM images WHERE deck_id = %s;""", (deck_id, ))
 
 
 def get_img(
         deck_id: int,
         table=Constants.image_table
-) -> tuple[int, str]:
+) -> tuple[int, str] | None:
     '''Retourne un tuple contenant l'id de l'image dans la table image, et son extension.
     '''
     sql = (f"""SELECT img_id, extension """
