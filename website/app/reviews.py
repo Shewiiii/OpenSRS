@@ -174,7 +174,7 @@ def rate_card(
                               user_id, srs_table=srs_table)
 
     state = int(card.card.state)
-    timestamp = int(datetime.timestamp(now)*1000)
+    timestamp = int(datetime.timestamp(now))
     dico = {
         Rating.Again: 'Again',
         Rating.Hard: 'Hard',
