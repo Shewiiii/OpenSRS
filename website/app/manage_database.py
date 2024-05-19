@@ -112,10 +112,11 @@ def delete_image(deck_id: int) -> None:
     '''Supprime dans la table images l'entrée d'une image d'un deck donné. 
     '''
     img_id, extension = get_img(deck_id)
-    path = (pathlib.Path(__file__).parents[1] / 'static/img/uploads'
-            / f'{img_id}{extension}')
-    os.remove(path)
-    db.query("""DELETE FROM images WHERE deck_id = %s;""", (deck_id, ))
+    if img_id and extension:
+        path = (pathlib.Path(__file__).parents[1] / 'static/img/uploads'
+                / f'{img_id}{extension}')
+        os.remove(path)
+        db.query("""DELETE FROM images WHERE deck_id = %s;""", (deck_id, ))
 
 
 def get_img(
@@ -439,7 +440,7 @@ def add_review_entry(
         deck_id: int,
         user_id: int,
         rating: str,
-        state: int,
+        state: int = -1,
         timestamp: int = 0,
         reviews_table=Constants.reviews_table,
 ) -> None:
