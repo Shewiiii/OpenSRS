@@ -1,4 +1,7 @@
-Notes: 
+# OpenSRS
+A customizable, user friendly web SRS based on FSRS v4.5 and developed for a school project.
+      
+## Notes: 
 - This project has been made for a school project, and is fully in French, my native tongue. I plan to translate it in the near future, but if you want to use a reliable flashcards app/SRS, just use Anki instead of my website.
 - This project isn't finished yet, the website is still private.
 
