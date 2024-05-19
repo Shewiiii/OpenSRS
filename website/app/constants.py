@@ -4,6 +4,7 @@ class Constants:
     decks_table = 'decks'
     image_table = 'images'
     reviews_table = 'reviews'
+    users_table = 'users'
     srs_table = 'srs'
     temp_user_id = 1
     temp_new_cards = 10

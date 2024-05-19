@@ -6,6 +6,7 @@ import re
 from fsrs import Rating, State
 from app.model import Carte
 
+
 class DB:
     # en gros: se connecte à la base de données quand nécessaire, pas de pb d'actualisation comme ça
     conn = None
@@ -17,14 +18,14 @@ class DB:
             password=Trucs.mdp,
             database='cards')
 
-    def query(self, sql):
+    def query(self, sql, params: tuple | None = None):
         print(sql)
         try:
             cursor = self.conn.cursor(buffered=True)
         except:
             self.connect()
             cursor = self.conn.cursor(buffered=True)
-        cursor.execute(sql)
+        cursor.execute(sql, params)
         self.conn.commit()
         return cursor
 
@@ -71,7 +72,9 @@ def remove_ghost_reviews(
         card_id = row[0]
         if card_id not in ids:
             db.query(
-                f'DELETE FROM {reviews_table} WHERE card_id = {card_id};'
+                f"""DELETE FROM {reviews_table} """
+                """WHERE card_id = %s;""",
+                (card_id, )
             )
 
 
@@ -84,19 +87,20 @@ def add_image(
 
         Retourne l'id de l'image dans la table images.
     '''
-    cursor = db.query(f'SELECT img_id FROM {table} WHERE deck_id = {deck_id}')
+    sql = f"""SELECT img_id FROM {table} WHERE deck_id = %s"""
+    cursor = db.query(sql, (deck_id))
     result = cursor.fetchall()
 
     if len(result) != 0:
         print(f"image déjà existante à l'ID {result[0][0]}, remplacage..")
-        db.query(f'UPDATE {table}\
-                 SET extension = "{extension}" WHERE deck_id = {deck_id};')
+        sql = f"""UPDATE {table} SET extension = %s WHERE deck_id = %s;"""
+        db.query(sql, (extension, deck_id))
         return result[0][0]
 
     else:
         img_ig = get_free_id(table=table)
-        db.query(f'INSERT INTO {table}\
-                  VALUES ({img_ig},{deck_id},"{extension}");')
+        sql = f"""INSERT INTO {table} VALUES (%s,%s,%s);"""
+        db.query(sql, (img_ig, deck_id, extension))
 
         return img_ig
 
@@ -104,7 +108,7 @@ def add_image(
 def delete_image(deck_id: int) -> None:
     '''Supprime dans la table images l'entrée d'une image d'un deck donné. 
     '''
-    db.query(f'DELETE FROM images WHERE deck_id = {deck_id};')
+    db.query("""DELETE FROM images WHERE deck_id = %s;""", (deck_id, ))
 
 
 def get_img(
@@ -113,8 +117,9 @@ def get_img(
 ) -> tuple[int, str]:
     '''Retourne un tuple contenant l'id de l'image dans la table image, et son extension.
     '''
-    cursor = db.query(f'SELECT img_id, extension '
-                      f'FROM {table} WHERE deck_id = {deck_id};')
+    sql = (f"""SELECT img_id, extension """
+           f"""FROM {table} WHERE deck_id = %s;""")
+    cursor = db.query(sql, (deck_id, ))
     result = cursor.fetchall()
 
     if len(result) == 0:
@@ -137,14 +142,10 @@ def create_deck(
         deck_id = get_free_id(decks_table)
     now = datetime.now()
     created = now.strftime("%Y-%m-%d %H:%M:%S")
-    db.query(
-        f'INSERT INTO {decks_table} VALUES ('
-        f'{deck_id},'
-        f'{user_id},'
-        f'"{name}",'
-        f'"{description}",'
-        f'"{created}");'
-    )
+
+    sql = (f"""INSERT INTO {decks_table} """
+           f"""VALUES (%s,%s,%s,%s,%s);""")
+    db.query(sql, (deck_id, user_id, name, description, created))
 
 
 def delete_deck(
@@ -156,10 +157,14 @@ def delete_deck(
 ) -> None:
     '''Supprime un deck, son image et toutes ses cartes associées les tables correspondantes.
     '''
-    db.query(f'DELETE FROM {deck_table} WHERE deck_id = {deck_id};')
-    db.query(f'DELETE FROM {card_table} WHERE deck_id = {deck_id};')
-    db.query(f'DELETE FROM {reviews_table} WHERE deck_id = {deck_id};')
-    db.query(f'DELETE FROM {srs_table} WHERE deck_id = {deck_id};')
+    db.query(f"""DELETE FROM {deck_table} WHERE deck_id = %s;""",
+             (deck_id, ))
+    db.query(f"""DELETE FROM {card_table} WHERE deck_id = %s;""",
+             (deck_id, ))
+    db.query(f"""DELETE FROM {reviews_table} WHERE deck_id = %s;""",
+             (deck_id, ))
+    db.query(f"""DELETE FROM {srs_table} WHERE deck_id = %s;""",
+             (deck_id, ))
     delete_image(deck_id)
 
 
@@ -182,10 +187,20 @@ def create_card(
         card_id = get_free_id()
     now = datetime.now(timezone.utc)
     created = now.strftime("%Y-%m-%d %H:%M:%S")
-    db.query(f'INSERT INTO {cards_table} '
-             f'VALUES ({card_id},{user_id},"{deck_id}",'
-             f'"{front}","{front_sub}","{back}","{back_sub}",'
-             f'"{back_sub2}","{tag}","{created}");')
+    sql = f"""INSERT INTO {cards_table} VALUES (
+           %s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
+    db.query(sql, (
+        card_id,
+        user_id,
+        deck_id,
+        front,
+        front_sub,
+        back,
+        back_sub,
+        back_sub2,
+        tag,
+        created,
+    ))
 
     insert_card_srs(card_id, deck_id, user_id, srs_table=srs_table)
 
@@ -199,9 +214,12 @@ def delete_card(
     '''Supprime toutes les cartes d'un deck donné.
     '''
 
-    db.query(f"DELETE FROM {card_table} WHERE card_id = {card_id};")
-    db.query(f"DELETE FROM {review_table} WHERE card_id = {card_id};")
-    db.query(f"DELETE FROM {srs_table} WHERE card_id = {card_id};")
+    db.query(f"""DELETE FROM {card_table}
+             WHERE card_id = %s;""", (card_id, ))
+    db.query(f"""DELETE FROM {review_table}
+             WHERE card_id = %s;""", (card_id, ))
+    db.query(f"""DELETE FROM {srs_table}
+             WHERE card_id = %s;""", (card_id, ))
 
 
 def delete_all_cards(table: str = Constants.cards_table) -> None:
@@ -233,7 +251,9 @@ def get_card_from_card_id(
     '''Retourne les informations d'une carte sous forme d'un dictionnaire 
         à partir de son id.
     '''
-    cursor = db.query(f'SELECT * FROM {table} WHERE card_id = {card_id}')
+    cursor = db.query(f"""SELECT * FROM {table} """
+                      f"""WHERE card_id = %s;""",
+                      (card_id, ))
     result = cursor.fetchall()
     if len(result) == 0:
         return None
@@ -263,12 +283,15 @@ def get_cards_from_list(
     '''Retourne les informations d'une carte sous forme d'un dictionnaire 
         à partir d'une liste d'ids.
     '''
-    string = f'SELECT * FROM {table} WHERE deck_id = {deck_id} AND '
+    params = [deck_id]
+    sql = (f"""SELECT * FROM {table} """
+           """WHERE deck_id = %s AND """)
     for card_id in card_ids:
-        string += f'card_id = {card_id} OR '
+        params.append(card_id)
+        sql += """card_id = %s OR """
 
-    string = string[:-3] + ';'
-    cursor = db.query(string)
+    sql = sql[:-3] + ';'
+    cursor = db.query(sql, params)
     result = cursor.fetchall()
 
     if len(result) == 0:
@@ -293,24 +316,6 @@ def get_cards_from_list(
         return cards
 
 
-def get_deck_list_from_user(
-        user_id=Constants.temp_user_id,
-        table=Constants.decks_table,
-) -> list[tuple[int, str]]:
-    '''(Obsolète et spécifique) Retourne tous les decks associé à un utilisateur, 
-        à partir de son id, sous forme d'une liste contenant
-        des tuples d'ids et de noms de decks.
-    '''
-    cursor = db.query(f'SELECT * FROM {table} WHERE user_id = {user_id};')
-    result = cursor.fetchall()
-    liste = []
-
-    for row in result:
-        liste.append((row[0], row[2]))
-
-    return liste
-
-
 def get_decks_from_user(
     request,
     user_id=Constants.temp_user_id,
@@ -319,20 +324,21 @@ def get_decks_from_user(
 ) -> dict:
     '''Retourne tous les decks associé à un utilisateur, à partir de son id, sous forme d'un dictionnaire.
     '''
-    from app.reviews import get_cards_srs_to_review_from_deck_id,get_review_stats
+    from app.reviews import get_cards_srs_to_review_from_deck_id, get_review_stats
     cursor = db.query(f'SELECT * FROM {table} WHERE user_id = {user_id};')
     result = cursor.fetchall()
     decks = []
     for row in result:
         img_id, extension = get_img(row[0])
-        count = db.query(
-            f'SELECT COUNT(front) FROM {cards_table} '
-            f'WHERE deck_id = {row[0]};'
-        ).fetchall()[0][0]
+
+        sql = (f"""SELECT COUNT(front) FROM {cards_table} """
+               f"""WHERE deck_id = %s;""")
+        count = db.query(sql, (row[0], )).fetchall()[0][0]
 
         deck_id = row[0]
         if f'NEW_CARDS_COUNT{deck_id}' in request.cookies:
-            new_cards_count = int(request.cookies.get(f'NEW_CARDS_COUNT{deck_id}'))
+            new_cards_count = int(request.cookies.get(
+                f'NEW_CARDS_COUNT{deck_id}'))
         else:
             new_cards_count = 0
         due_cards_srs = get_cards_srs_to_review_from_deck_id(
@@ -341,7 +347,7 @@ def get_decks_from_user(
             new_cards_limit=Constants.new_cards_limit - new_cards_count,
         )
         stats = get_review_stats(due_cards_srs)
-        
+
         decks.append({
             'deck_id': deck_id,
             'name': row[2],
@@ -366,9 +372,10 @@ def get_deck_from_id(
     '''Retourne à partir de son id les informations d'un deck, ainsi que toutes les cartes contenues dans ce dernier.
     '''
     # 1ère requête pour vérifier si un deck existe pour un utilisateur donné
-    cursor = db.query(f'SELECT * FROM {decks_table} '
-                      f'WHERE {decks_table}.deck_id = {deck_id} '
-                      f'AND {decks_table}.user_id = {user_id};')
+    sql = (f"""SELECT * FROM {decks_table} """
+           f"""WHERE {decks_table}.deck_id = %s"""
+           f"""AND {decks_table}.user_id = %s;""")
+    cursor = db.query(sql, (deck_id, user_id))
     result = cursor.fetchall()
 
     if len(result) == 0:
@@ -384,9 +391,11 @@ def get_deck_from_id(
             'created': firstRow[4]
         }
         # 2ème requête pour obtenir toutes les cartes de ce deck, met les les cartes dans une liste cards
-        cursor = db.query(f'SELECT * FROM {cards_table} '
-                          f'WHERE {cards_table}.deck_id = {deck_id} '
-                          f'AND {cards_table}.user_id = {user_id};')
+        sql = (f"""SELECT * FROM {cards_table} """
+               f"""WHERE {cards_table}.deck_id = %s """
+               f"""AND {cards_table}.user_id = %s;""")
+        cursor = db.query(sql, (deck_id, user_id))
+
         result = cursor.fetchall()
         cards = []
 
@@ -434,10 +443,10 @@ def add_review_entry(
     if timestamp == 0:
         now = datetime.now(timezone.utc)
         timestamp = int(datetime.timestamp(now)*1000)
-    db.query(
-        f'INSERT INTO {reviews_table} VALUES '
-        f'({card_id}, {deck_id}, {user_id}, "{rating}", {timestamp}, {state});'
-    )
+
+    sql = (f"""INSERT INTO {reviews_table} VALUES """
+           f"""(%s,%s,%s,%s,%s,%s);""")
+    db.query(sql, (card_id, deck_id, user_id, rating, timestamp, state))
 
 
 def update_card_srs_from_dict(
@@ -448,20 +457,32 @@ def update_card_srs_from_dict(
 ) -> None:
     '''Met à jour l'état d'une carte donnée dans la table srs à partir d'un dico de variables.
     '''
-    assert variables["last_review"], 'Erreur: last_review manquant.'
+    assert variables["last_review"] != None, 'Erreur: last_review manquant.'
     db.query(
-        f'UPDATE {srs_table} SET '
-        f'''due = "{variables['due']}",'''
-        f'stability = {variables["stability"]},'
-        f'difficulty = {variables["difficulty"]},'
-        f'elapsed_days = {variables["elapsed_days"]},'
-        f'scheduled_days = {variables["scheduled_days"]},'
-        f'reps = {variables["reps"]},'
-        f'lapses = {variables["lapses"]},'
-        f'state = {variables["state"]},'
-        f'''last_review = "{variables['last_review']}" '''
-        f'WHERE card_id = {card_id} '
-        f'AND user_id = {user_id};'
+        f"""UPDATE {srs_table} SET """
+        """due = %s,"""
+        """stability = %s,"""
+        """difficulty = %s,"""
+        """elapsed_days = %s,"""
+        """scheduled_days = %s,"""
+        """reps = %s,"""
+        """lapses = %s,"""
+        """state = %s,"""
+        """last_review = %s """
+        """WHERE card_id = %s """
+        """AND user_id = %s;""",
+        (variables['due'],
+         variables['stability'],
+         variables['difficulty'],
+         variables['elapsed_days'],
+         variables['scheduled_days'],
+         variables['reps'],
+         variables['lapses'],
+         variables['state'],
+         variables['last_review'],
+         card_id,
+         user_id,
+         )
     )
 
 
@@ -478,19 +499,21 @@ def insert_card_srs(
     p = card.card.to_dict()
 
     db.query(
-        f'INSERT INTO {srs_table} VALUES ('
-        f'{card_id},'
-        f'{deck_id},'
-        f'{user_id},'
-        f'''"{p['due']}",'''
-        f'{p["stability"]},'
-        f'{p["difficulty"]},'
-        f'{p["elapsed_days"]},'
-        f'{p["scheduled_days"]},'
-        f'{p["reps"]},'
-        f'{p["lapses"]},'
-        f'{p["state"]},'
-        f'NULL);'
+        f"""INSERT INTO {srs_table} VALUES ("""
+        """%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,"""
+        """NULL);""",
+        (card_id,
+         deck_id,
+         user_id,
+         p['due'],
+         p['stability'],
+         p['difficulty'],
+         p['elapsed_days'],
+         p['scheduled_days'],
+         p['reps'],
+         p['lapses'],
+         p['state'],
+         )
     )
 
 
@@ -502,9 +525,12 @@ def get_card_variables(
     '''Retourne les variables d'une carte donnée à partir de la table srs.
     '''
     cursor = db.query(
-        f'SELECT * FROM {srs_table} '
-        f'WHERE card_id = {card_id} '
-        f'AND user_id = {user_id}'
+        f"""SELECT * FROM {srs_table} """
+        """WHERE card_id = %s """
+        """AND user_id = %s;""",
+        (card_id,
+         user_id,
+         )
     )
     result = cursor.fetchall()
     row = result[0]
@@ -535,8 +561,12 @@ def forget_card(
     card = get_card_from_card_id(card_id)
     deck_id, user_id = card['deck_id'], card['user_id']
 
-    db.query(f'DELETE FROM {reviews_table} WHERE card_id = {card_id};')
-    db.query(f'DELETE FROM {srs_table} WHERE card_id = {card_id};')
+    db.query(f"""DELETE FROM {reviews_table} """
+             """WHERE card_id = %s;""",
+             (card_id, ))
+    db.query(f"""DELETE FROM {srs_table} """
+             """WHERE card_id = %s;""",
+             (card_id, ))
     insert_card_srs(card_id, deck_id, user_id, srs_table=srs_table)
 
 
@@ -547,7 +577,10 @@ def get_ratings_from_card_id(
 ) -> list:
     '''Retourne les Rating d'une carte donnée, sous forme de strings ou non. 
     '''
-    cursor = db.query(f"SELECT * FROM {table} WHERE card_id = {card_id};")
+    cursor = db.query(
+        f"SELECT * FROM {table} WHERE card_id = %s;""",
+        (card_id, )
+    )
     result = cursor.fetchall()
     ratings = []
     if stringForm == True:
@@ -573,7 +606,8 @@ def get_reviews_from_deck_id(
     '''Retourne les reviews des cartes d'un deck donnée.
     '''
     # l'utilisation d'un dico rend la fonction bien plus intuitive à utiliser et la rend future proof
-    cursor = db.query(f"SELECT * FROM {table} WHERE deck_id = {deck_id};")
+    cursor = db.query(f"""SELECT * FROM {table} WHERE deck_id = %s;""",
+                      (deck_id, ))
     result = cursor.fetchall()
     reviews = []
     for row in result:
@@ -595,14 +629,18 @@ def get_reviews_from_list(
 ) -> dict:
     '''Retourne les reviews des cartes données dans une liste.
     '''
-    string = f"SELECT * FROM {table} WHERE deck_id = {deck_id} AND "
+    params = [deck_id]
+    sql = (f"""SELECT * FROM {table} """
+           """WHERE deck_id = %s AND """)
     for card_id in card_ids:
-        string += f'card_id = {card_id} OR '
-    string = string[:-3] + ';'
+        params.append(card_id)
+        sql += """card_id = %s OR """
 
-    cursor = db.query(string)
-    reviews = []
+    sql = sql[:-3] + ';'
+    cursor = db.query(sql, params)
     result = cursor.fetchall()
+
+    reviews = []
 
     for row in result:
         reviews.append({
@@ -622,9 +660,10 @@ def get_cards_srs_from_deck_id(
     '''Retourne un dictionnaire contenant les informations srs des cartes d'un deck donné.
     '''
     cards_srs = []
-    cursor = db.query(f'SELECT * FROM {table} '
-                      f'WHERE deck_id = {deck_id} '
-                      f'AND user_id = {user_id};')
+    cursor = db.query(f"""SELECT * FROM {table} """
+                      """WHERE deck_id = %s """
+                      """AND user_id = %s;""",
+                      (deck_id, user_id))
     result = cursor.fetchall()
     for card in result:
         card_dict = {
@@ -652,13 +691,15 @@ def get_cards_srs_from_deck_id(
 def test_login(
     username: str,
     password: str,
+    table: str = Constants.users_table
 ) -> str:
     '''Teste des identifiants de connection,
         renvoie l'user_id sous forme de string si ces derniers sont valides. 
     '''
     cursor = db.query(
-        f'SELECT * FROM users'
-        f'WHERE username = "{username}" AND password = "{password}";'
+        f"""SELECT * FROM {table} """
+        """WHERE username = %s AND password = %s;""",
+        (username, password)
     )
     result = cursor.fetchall()
 
