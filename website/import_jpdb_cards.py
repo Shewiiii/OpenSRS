@@ -27,7 +27,8 @@ def get_pitchaccent_pattern_from_div(
     '''Retourne le pitch accent pattern sous forme d'un string.
 
         Paramètre:
-            div (BeautifulSoup): La div contenant le motif du pitchaccent (jpdb).
+            div (BeautifulSoup): La div contenant 
+            le motif du pitch accent (jpdb).
     '''
     divs = div.find_all('div')
     moras = []
@@ -142,7 +143,7 @@ def import_deck(
 
     # Deuxième passage: on collecte les infos de chaque mot
     # à partir de la page vocabulary
-    # (phrase, phrase traduite...pitch accent ?)
+    # (phrase, phrase traduite et pitch accent)
     cards = []
     for word in jpdb_words:
         url = f'https://jpdb.io/vocabulary/{word['vid']}/{word['word']}'
@@ -150,21 +151,23 @@ def import_deck(
         raw = request(url, cookie)
         example = raw.find('div', {'class': 'subsection-examples'})
 
-        jp_sentence = example.find('div', {'class': 'jp'})
-        if jp_sentence:
-            jp_sentence = jp_sentence.text
-        else:
-            jp_sentence = ''
+        jp_sentence = ''
+        en_sentence = ''
+        if example != None:
+            jp = example.find('div', {'class': 'jp'})
+            if jp:
+                jp_sentence = jp.text
 
-        en_sentence = example.find('div', {'class': 'en'})
-        if en_sentence:
-            en_sentence = en_sentence.text
-        else:
-            en_sentence = ''
+            en = example.find('div', {'class': 'en'})
+            if en:
+                en_sentence = en.text
 
         pitchaccent_div = raw.find(
             'div', {'style': 'word-break: keep-all; display: flex;'})
-        pitchaccent = get_pitchaccent_pattern_from_div(pitchaccent_div)
+        if pitchaccent_div:
+            pitchaccent = get_pitchaccent_pattern_from_div(pitchaccent_div)
+        else:
+            pitchaccent = ''
 
         card = word
         card.update({
@@ -217,65 +220,73 @@ def get_card_from_jpdb(
                 'deck_id': L'id du deck mise en paramètre.
 
                 'word': Le mot en japonais.
-                
+
                 'vid': L'id d'un mot sur jpdb , trouvable dans l'url.
-                
+
                 'reading': La lecture du mot en kana.
-                
+
                 'meanings': La/les définition(s) du mot.
 
                 'jp_sentence': La première phrase d'exemple présente sur la page
                 du mot sur jpdb, en japonais (si disponible).
-                
+
                 'en_sentence': La traduction de la phrase en Anglais (si disponible).
 
                 'pitchaccent': Le pitch accent du mot.
                 (ex: LHHH pour un mot Heiban à 4 mores)
     '''
+    # Requête initiale
     url = f'https://jpdb.io/vocabulary/{vid}/{word}'
-
     raw = request(url)
-    
+
+    # Trouve la lecture du mot (mot en kana)
     raw_spelling = str(raw.find('div', {'class': 'primary-spelling'}))
     reading = ''
     for letter in raw_spelling:
         if 12354 <= ord(letter) <= 12538:
             reading += letter
 
+    # Trouve les définitions du mot
     meanings = []
     raw_meanings = raw.find('div', {'class': 'subsection-meanings'})
     raw_meanings = raw_meanings.find_all('div', {'class': 'description'})
     for meaning in raw_meanings:
         meanings.append(meaning.text)
-        
+
+    # Trouve des phrases exemples du mot
     example = raw.find('div', {'class': 'subsection-examples'})
 
-    jp_sentence = example.find('div', {'class': 'jp'})
-    if jp_sentence:
-        jp_sentence = jp_sentence.text
-    else:
-        jp_sentence = ''
+    jp_sentence = ''
+    en_sentence = ''
+    if example != None:
 
-    en_sentence = example.find('div', {'class': 'en'})
-    if en_sentence:
-        en_sentence = en_sentence.text
-    else:
-        en_sentence = ''
+        jp = example.find('div', {'class': 'jp'})
+        if jp:
+            jp_sentence = jp.text
 
+        en = example.find('div', {'class': 'en'})
+        if en:
+            en_sentence = en.text
+
+    # Trouve le motif indiquant le pitch accent, et le traduit en string
     pitchaccent_div = raw.find(
         'div', {'style': 'word-break: keep-all; display: flex;'})
-    pitchaccent = get_pitchaccent_pattern_from_div(pitchaccent_div)
+    
+    if pitchaccent_div:
+        pitchaccent = get_pitchaccent_pattern_from_div(pitchaccent_div)
+    else:
+        pitchaccent = ''
 
+    # Crée le dictionnaire
     card = {
         'deck_id': deck_id,
         'word': word,
         'vid': vid,
-        'reading' : reading,
-        'meanings' : meanings,
+        'reading': reading,
+        'meanings': meanings,
         'jp_sentence': jp_sentence,
         'en_sentence': en_sentence,
         'pitchaccent': pitchaccent,
     }
-    
-    return card
 
+    return card

@@ -4,5 +4,6 @@ config.py
 .vscode
 *.pyc
 secret.py
+config.py
 __pycache__/*
 website/app/config.py

@@ -18,8 +18,13 @@ class DB:
             password=Trucs.mdp,
             database='cards')
 
-    def query(self, sql, params: tuple | None = None):
-        print(sql)
+    def query(self, 
+              sql: str, 
+              params: tuple | None = None,
+              debug: bool = False
+    ):  
+        if debug:
+            print(sql)
         try:
             cursor = self.conn.cursor(buffered=True)
         except:
@@ -55,7 +60,6 @@ def get_free_id(table=Constants.cards_table) -> int:
         return 0
     else:
         lastid = result[-1][0]
-        print("lastid:", lastid)
         return lastid+1
 
 
@@ -373,7 +377,7 @@ def get_deck_from_id(
     '''
     # 1ère requête pour vérifier si un deck existe pour un utilisateur donné
     sql = (f"""SELECT * FROM {decks_table} """
-           f"""WHERE {decks_table}.deck_id = %s"""
+           f"""WHERE {decks_table}.deck_id = %s """
            f"""AND {decks_table}.user_id = %s;""")
     cursor = db.query(sql, (deck_id, user_id))
     result = cursor.fetchall()
