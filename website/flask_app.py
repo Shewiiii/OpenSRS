@@ -137,10 +137,12 @@ def delete(deck_id):
 
 
 @app.route('/deck/<deck_id>/delete/confirm', methods=['GET', 'POST'])
-def confirmDelete(deck_id):
+def confirm_delete(deck_id):
     delete_deck(deck_id)
-
-    return redirect('/decklist')
+    response = make_response(redirect('/decklist'))
+    response.set_cookie(f'NEW_CARDS_COUNT{deck_id}','', expires=0)
+    
+    return response
 
 
 @app.route('/addDeck', methods=['GET', 'POST'])
