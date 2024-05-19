@@ -461,7 +461,7 @@ def update_card_srs_from_dict(
 ) -> None:
     '''Met à jour l'état d'une carte donnée dans la table srs à partir d'un dico de variables.
     '''
-    assert variables["last_review"] != None, 'Erreur: last_review manquant.'
+    assert 'last_review' in variables, 'Erreur: last_review manquant.'
     db.query(
         f"""UPDATE {srs_table} SET """
         """due = %s,"""

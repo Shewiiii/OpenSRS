@@ -21,7 +21,7 @@
                     <h3 class="nomargintop nomarginbot">Voulez-vous vraiment supprimer ce deck ?</h3>
                     <div class="boutons ouinon">
                         <a class="bouton bouton1" onclick="redirection(`/deck/{{ deck_id }}` )">Non</a>
-                        <a class="bouton boutonRouge" href="{{ url_for('confirmDelete', deck_id=deck_id) }}">Oui</a>
+                        <a class="bouton boutonRouge" href="{{ url_for('confirm_delete', deck_id=deck_id) }}">Oui</a>
                     </div>
                 </div>
             </div>
