@@ -149,9 +149,11 @@ def jpdb_import(
             for review in reviews:
                 timestamp = review['timestamp']
                 date = dt(timestamp)
-
-                rating = rating_dict[review['grade']]
-                card_srs.rate(rating, now=date)
+                try:
+                    rating = rating_dict[review['grade']]
+                    card_srs.rate(rating, now=date)
+                except:
+                    print('Skipped a rating: not in dict')
             variables = card_srs.get_variables()
 
             # Intègre tout dans OpenSRS
