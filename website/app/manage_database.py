@@ -23,7 +23,8 @@ class DB:
     def query(self,
               sql: str,
               params: tuple | None = None,
-              debug: bool = False
+              debug: bool = False,
+              many: bool = False,
               ):
         if debug:
             print(sql)
@@ -32,7 +33,10 @@ class DB:
         except:
             self.connect()
             cursor = self.conn.cursor(buffered=True)
-        cursor.execute(sql, params)
+        if many:
+            cursor.executemany(sql, params)
+        else:
+            cursor.execute(sql, params)
         self.conn.commit()
         return cursor
 
@@ -196,7 +200,7 @@ def delete_deck(
         reviews_table: str = Constants.reviews_table,
         srs_table: str = Constants.srs_table,
 ) -> None:
-    '''Supprime un deck, son image et toutes ses cartes associées les tables correspondantes.
+    '''Supprime un deck, son image et toutes ses cartes associées.
     '''
     db.query(f"""DELETE FROM {deck_table} WHERE deck_id = %s;""",
              (deck_id, ))
@@ -222,7 +226,7 @@ def create_card(
         srs_table: str = Constants.srs_table,
         user_id: str = Constants.temp_user_id,
 ) -> None:
-    '''Crée une carte associé à un deck et un utilisateur en ajoutant une entrée dans la table cards2.
+    '''Crée une carte associé à un deck et un utilisateur.
     '''
     if card_id == None:
         card_id = get_free_id()
@@ -362,7 +366,7 @@ def get_decks_from_user(
     table=Constants.decks_table,
     cards_table=Constants.cards_table,
 ) -> dict:
-    '''Retourne tous les decks associé à un utilisateur, à partir de son id, sous forme d'un dictionnaire.
+    '''Retourne tous les decks et ses infos d'un utilisateur.
     '''
     from app.reviews import get_cards_srs_to_review_from_deck_id, get_review_stats
     cursor = db.query(f'SELECT * FROM {table} WHERE user_id = {user_id};')
@@ -411,7 +415,7 @@ def get_deck_from_id(
         decks_table=Constants.decks_table,
         cards_table=Constants.cards_table,
 ) -> None | tuple[dict, list[dict]]:
-    '''Retourne à partir de son id les informations d'un deck, ainsi que toutes les cartes contenues dans ce dernier.
+    '''Retourne à partir de son id les informations d'un deck et ses cartes.
     '''
     # 1ère requête pour vérifier si un deck existe pour un utilisateur donné
     sql = (f"""SELECT * FROM {decks_table} """
@@ -499,7 +503,7 @@ def update_card_srs_from_dict(
         user_id: int = Constants.temp_user_id,
         srs_table: str = Constants.srs_table,
 ) -> None:
-    '''Met à jour l'état d'une carte donnée dans la table srs à partir d'un dico de variables.
+    '''Met à jour l'état d'une carte donnée à partir d'un dico de variables.
     '''
     assert 'last_review' in variables, 'Erreur: last_review manquant.'
     db.query(
@@ -528,6 +532,79 @@ def update_card_srs_from_dict(
          user_id,
          )
     )
+
+
+def bulk_update_cards_srs(
+    cards_variables: dict,
+    user_id: int = Constants.temp_user_id,
+    srs_table: str = Constants.srs_table,
+) -> None:
+    '''Met à jour l'état de plusieurs cartes à partir d'un dico de variables.
+
+        Paramètres:
+            cards_variables (dict): Un dico avec en clé l'id de la carte et
+            en valeur ses variables.
+
+            srs_table (str): La table srs.
+    '''
+    columns = [
+        'due',
+        'stability',
+        'difficulty',
+        'elapsed_days',
+        'scheduled_days',
+        'reps',
+        'lapses',
+        'state',
+        'last_review',
+        'stability',
+    ]
+    # Alors c'est bizzare mais c'est pour minimiser les requêtes
+    # Toujours 9 requêtes, au lieu du nombre de cartes O(n)
+    for column in columns:
+        sql = f"""UPDATE {srs_table} SET {column} = CASE card_id """
+        inn = ''
+        params = []
+        for card_id, variables in cards_variables.items():
+            inn += f'{card_id},'
+            sql += f"""WHEN {card_id} THEN %s """
+            params.append(variables[column])
+        sql += (f"""ELSE {column} END WHERE card_id IN({inn[:-1]}) """
+                f"""AND user_id = {user_id}""")
+
+        db.query(sql, params)
+
+    # sql = (
+    #     f"""UPDATE {srs_table} SET """
+    #     """due = %s,"""
+    #     """stability = %s,"""
+    #     """difficulty = %s,"""
+    #     """elapsed_days = %s,"""
+    #     """scheduled_days = %s,"""
+    #     """reps = %s,"""
+    #     """lapses = %s,"""
+    #     """state = %s,"""
+    #     """last_review = %s """
+    #     """WHERE card_id = %s """
+    #     """AND user_id = %s;"""
+    # )
+    # params = []
+    # for card_id, variables in cards_variables.items():
+    #     params += [(
+    #         variables['due'],
+    #         variables['stability'],
+    #         variables['difficulty'],
+    #         variables['elapsed_days'],
+    #         variables['scheduled_days'],
+    #         variables['reps'],
+    #         variables['lapses'],
+    #         variables['state'],
+    #         variables['last_review'],
+    #         card_id,
+    #         user_id,
+    #     )]
+
+    # db.query(sql, params, many=True)
 
 
 def insert_card_srs(
@@ -649,7 +726,8 @@ def get_reviews_from_deck_id(
 ) -> dict:
     '''Retourne les reviews des cartes d'un deck donnée.
     '''
-    # l'utilisation d'un dico rend la fonction bien plus intuitive à utiliser et la rend future proof
+    # l'utilisation d'un dico rend la fonction bien plus intuitive à utiliser
+    # et la rend future proof
     cursor = db.query(f"""SELECT * FROM {table} WHERE deck_id = %s;""",
                       (deck_id, ))
     result = cursor.fetchall()
@@ -660,7 +738,7 @@ def get_reviews_from_deck_id(
             'deck_id': row[1],
             'user_id': row[2],
             'rating': row[3],
-            'date': row[4]
+            'timestamp': row[4]
         })
 
     return reviews
@@ -691,9 +769,9 @@ def get_reviews_from_list(
             'deck_id': row[1],
             'user_id': row[2],
             'rating': row[3],
-            'date': row[4]
+            'timestamp': row[4]
         })
-        
+
     return reviews
 
 
@@ -736,17 +814,44 @@ def get_cards_srs_from_deck_id(
 def add_jpdb_entry(
     vid: int,
     word: str,
+    reading: str,
     meaning: str,
-    sentence_jp: str,
-    sentence_en: str,
+    jp_sentence: str,
+    en_sentence: str,
     pitch_accent: str,
     table: str = Constants.jpdb_table,
 ) -> None:
     '''Ajoute un mot et ses informations de jpdb dans la table jpdb.
     '''
     db.query(f"""INSERT INTO {table} VALUES """
-             """(%s, %s, %s, %s, %s, %s)""",
-             (vid, word, meaning, sentence_jp, sentence_en, pitch_accent))
+             """(%s, %s, %s, %s, %s, %s, %s)""",
+             (vid, word, reading, meaning, jp_sentence, en_sentence, pitch_accent))
+
+
+def get_jpdb_data(table: str = Constants.jpdb_table) -> list:
+    '''Récupère toute les données de la table jpdb.
+    '''
+    data = []
+    cursor = db.query(f"""SELECT * FROM {table}""")
+    result = cursor.fetchall()
+    for row in result:
+        data.append({
+            'vid': row[0],
+            'word': row[1],
+            'reading': row[2],
+            'meaning': row[3],
+            'jp_sentence': row[4],
+            'en_sentence': row[5],
+            'pitch_accent': row[6],
+        })
+
+    return data
+
+
+def delete_jpdb_data(table: str = Constants.jpdb_table) -> None:
+    '''Supprime toutes les données de la table jpdb.
+    '''
+    db.query(f'DELETE FROM {table};')
 
 
 def test_login(

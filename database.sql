@@ -56,8 +56,9 @@ CREATE TABLE srs (
 CREATE TABLE jpdb (
     vid INT,
     word VARCHAR(255),
+    reading VARCHAR(255),
     meaning VARCHAR(2000),
-    sentence_jp VARCHAR(255),
-    sentence_en VARCHAR(255),
-    pitch_accent VARCHAR(255)
+    jp_sentence VARCHAR(255),
+    en_sentence VARCHAR(255),
+    pitchaccent VARCHAR(255)
 );
