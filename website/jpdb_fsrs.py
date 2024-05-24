@@ -65,6 +65,7 @@ def jpdb_import(
     directory_path=pathlib.Path(__file__).parents[0] / 'jpdb',
     exists: bool = False,
     deck_id: int | None = None,
+    save_in_db: bool = True,
 
 ) -> None:
     '''Importe les données du json reviews de jpdb vers OpenSRS.
@@ -150,7 +151,13 @@ def jpdb_import(
                 try:
                     rating = rating_dict[review['grade']]
                     card_srs.rate(rating, now=date)
-                    add_review_entry(card_id, deck_id, user_id, rating)
+                    add_review_entry(
+                        card_id, 
+                        deck_id, 
+                        user_id, 
+                        rating,
+                        timestamp=timestamp
+                    )
                 except Exception as e:
                     print('Error', e)
             variables = card_srs.get_variables()

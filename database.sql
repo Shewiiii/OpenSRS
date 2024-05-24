@@ -16,7 +16,9 @@ CREATE TABLE decks (
     user_id INT REFERENCES users(user_id),
     name VARCHAR(1000),
     description VARCHAR(1000),
-    created DATETIME
+    created DATETIME,
+    params VARCHAR(255),
+    retention INT
 );
 CREATE TABLE cards2 (
     card_id INT PRIMARY KEY NOT NULL,
@@ -57,3 +59,10 @@ CREATE TABLE srs (
     state INT,
     last_review DATETIME
 );
+CREATE TABLE jpdb (
+    vid INT,
+    word VARCHAR(255),
+    sentence_jp VARCHAR(255),
+    sentence_en VARCHAR(255),
+    pitch_accent VARCHAR(255)
+)

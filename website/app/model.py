@@ -81,14 +81,14 @@ class Carte():
     def review_history(self, rating: Rating) -> int:
         return self.scheduling_cards[rating].review_log.rating
 
-ratings = (
-            Rating.Good,
-            Rating.Good,
-            Rating.Good,
-            Rating.Good,
-            Rating.Good,
-)
 
+# ratings = (
+#             Rating.Good,
+#             Rating.Good,
+#             Rating.Good,
+#             Rating.Good,
+#             Rating.Good,
+# )
 
 # now = datetime.now(timezone.utc)
 
@@ -112,7 +112,7 @@ ratings = (
 #     scheduling_cards = f2.repeat(card2, now)
 #     card2 = scheduling_cards[rating].card
 #     # print(card2.due)
-    
+
 # carte1 = Carte(params=Constants.default_params)
 # carte2 = Carte(params=Constants.jpdb_updated_params, retention=0.8)
 

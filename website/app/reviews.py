@@ -212,6 +212,16 @@ def get_review_stats(
     
     return stats
 
+
+def reschedule_cards(
+    deck_id: int,
+    user_id: int = Constants.temp_user_id
+) -> None:
+    '''Replanifie les cartes d'un deck. 
+       Utile après avoir modifié la rétention ou les paramètres FSRS.
+    '''
+
+
 # POUR TESTS:
 # from random import randint
 # ids = get_all_ids()

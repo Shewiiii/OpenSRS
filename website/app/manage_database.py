@@ -8,6 +8,7 @@ from app.model import Carte
 import os
 import pathlib
 
+
 class DB:
     # en gros: se connecte à la base de données quand nécessaire, pas de pb d'actualisation comme ça
     conn = None
@@ -19,11 +20,11 @@ class DB:
             password=Trucs.mdp,
             database='cards')
 
-    def query(self, 
-              sql: str, 
+    def query(self,
+              sql: str,
               params: tuple | None = None,
               debug: bool = False
-    ):  
+              ):
         if debug:
             print(sql)
         try:
@@ -143,6 +144,8 @@ def create_deck(
         name: str = 'name',
         description: str = 'description',
         decks_table: str = Constants.decks_table,
+        params: str | tuple = Constants.default_params,
+        retention: int = Constants.default_retention,
 ) -> None:
     '''Crée un deck associé à un utilisateur en ajoutant une entrée dans la table decks.
     '''
@@ -152,8 +155,38 @@ def create_deck(
     created = now.strftime("%Y-%m-%d %H:%M:%S")
 
     sql = (f"""INSERT INTO {decks_table} """
-           f"""VALUES (%s,%s,%s,%s,%s);""")
-    db.query(sql, (deck_id, user_id, name, description, created))
+           f"""VALUES (%s,%s,%s,%s,%s,%s,%s);""")
+    db.query(sql,
+             (deck_id,
+              user_id,
+              name,
+              description,
+              created,
+              str(params),
+              retention)
+             )
+
+
+def get_deck_params(
+    deck_id: int,
+    user_id: int = Constants.temp_user_id,
+) -> tuple:
+    '''Renvoie les paramètres FSRS deck.
+    '''
+    deck_infos, _ = get_deck_from_id(deck_id, user_id)
+
+    return eval(deck_infos['params'])
+
+
+def get_deck_retention(
+    deck_id: int,
+    user_id: int = Constants.temp_user_id,
+) -> tuple:
+    '''Renvoie les paramètres FSRS deck.
+    '''
+    deck_infos, _ = get_deck_from_id(deck_id, user_id)
+
+    return deck_infos['retention']
 
 
 def delete_deck(
@@ -361,6 +394,8 @@ def get_decks_from_user(
             'name': row[2],
             'description': row[3],
             'created': row[4],
+            'params': row[5],
+            'retention': row[6],
             'card_count': count,
             'img_id': img_id,
             'extension': extension,
@@ -396,7 +431,9 @@ def get_deck_from_id(
             'deck_id': firstRow[0],
             'name': firstRow[2],
             'description': firstRow[3],
-            'created': firstRow[4]
+            'created': firstRow[4],
+            'params': firstRow[5],
+            'retention': firstRow[6],
         }
         # 2ème requête pour obtenir toutes les cartes de ce deck, met les les cartes dans une liste cards
         sql = (f"""SELECT * FROM {cards_table} """
@@ -696,6 +733,22 @@ def get_cards_srs_from_deck_id(
     return cards_srs
 
 
+def add_jpdb_entry(
+    vid: int,
+    word: str,
+    meaning: str,
+    sentence_jp: str,
+    sentence_en: str,
+    pitch_accent: str,
+    table: str = Constants.jpdb_table,
+) -> None:
+    '''Ajoute un mot et ses informations de jpdb dans la table jpdb.
+    '''
+    db.query(f"""INSERT INTO {table} VALUES """
+             """(%s, %s, %s, %s, %s, %s)""",
+             (vid, word, meaning, sentence_jp, sentence_en, pitch_accent))
+
+
 def test_login(
     username: str,
     password: str,
@@ -715,3 +768,26 @@ def test_login(
         return None
     else:
         return str(result[0][0])
+
+
+def add_login(
+    username: str,
+    email: str,
+    password: str,
+    table: str = Constants.users_table
+) -> int:
+    '''Crée des identifiants dans la table users.
+    '''
+    created = datetime.now()
+    user_id = get_free_id(table=table)
+    sql = (f"""INSERT INTO {table} """
+           f"""VALUES (%s,%s,%s,%s,%s);""")
+    db.query(sql, (
+        user_id,
+        username,
+        email,
+        password,
+        created,
+    )
+    )
+    return user_id
