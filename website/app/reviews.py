@@ -227,6 +227,7 @@ def get_fsrs_from_reviews(
     user_id: int,
     reviews: dict,
     params: tuple = Constants.default_params,
+    retention: int = Constants.default_retention,
     add_review: bool = False,
     deck_id: int | None = None,
     rating_dict: dict = Constants.rating_dict,
@@ -240,7 +241,11 @@ def get_fsrs_from_reviews(
        Si add_review == True, l'id du deck doit être précisé.
     '''
     first_review = dt(reviews[0]['timestamp'])
-    card_srs = Carte(created=first_review, params=params)
+    card_srs = Carte(
+        created=first_review,
+        params=params,
+        retention=retention,
+    )
 
     for review in reviews:
         timestamp = review['timestamp']
@@ -266,6 +271,7 @@ def reschedule_cards(
     deck_id: int,
     user_id: int = Constants.temp_user_id,
     params: tuple = Constants.default_params,
+    retention: int = Constants.default_retention
 ) -> None:
     '''Replanifie les cartes d'un deck. 
        Utile après avoir modifié la rétention ou les paramètres FSRS.
@@ -287,9 +293,10 @@ def reschedule_cards(
             user_id,
             reviews,
             params=params,
+            retention=retention,
         )
         cards_variables[card_id] = variables
-
+    
     bulk_update_cards_srs(cards_variables)
 
 

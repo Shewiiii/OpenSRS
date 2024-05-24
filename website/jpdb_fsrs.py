@@ -1,6 +1,6 @@
 from app.model import Carte
 from app.constants import Constants
-from app.reviews import dt, get_fsrs_from_reviews
+from app.reviews import dt, get_fsrs_from_reviews, reschedule_cards
 import json
 import pathlib
 from datetime import datetime, timezone
@@ -60,6 +60,7 @@ def jpdb_import(
     save_in_db: bool = True,
     from_db: bool = True,
     params: tuple = Constants.jpdb_updated_params,
+    retention: tuple = Constants.default_retention,
 ) -> None:
     '''Importe les données du json reviews de jpdb vers OpenSRS.
 
@@ -170,6 +171,7 @@ def jpdb_import(
                 rating_dict=jpdb_dict,
                 rating_key='grade',
                 params=params,
+                retention=retention
             )
 
             # Intègre tout dans OpenSRS
