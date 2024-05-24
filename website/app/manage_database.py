@@ -210,7 +210,7 @@ def delete_deck(
 
 
 def create_card(
-        deck_id=1,
+        deck_id=0,
         card_id=None,
         front: str = "front",
         front_sub: str = "front_sub",
@@ -254,7 +254,6 @@ def delete_card(
 ) -> None:
     '''Supprime toutes les cartes d'un deck donné.
     '''
-
     db.query(f"""DELETE FROM {card_table}
              WHERE card_id = %s;""", (card_id, ))
     db.query(f"""DELETE FROM {review_table}
@@ -684,7 +683,6 @@ def get_reviews_from_list(
     sql = sql[:-3] + ';'
     cursor = db.query(sql, params)
     result = cursor.fetchall()
-
     reviews = []
 
     for row in result:
@@ -695,6 +693,8 @@ def get_reviews_from_list(
             'rating': row[3],
             'date': row[4]
         })
+        
+    return reviews
 
 
 def get_cards_srs_from_deck_id(

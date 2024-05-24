@@ -249,6 +249,10 @@ def get_fsrs_from_reviews(
                 )
         except Exception as e:
                     print('Error', e)
+    variables = card_srs.get_variables()
+    return variables
+        
+
 
 
 def reschedule_cards(

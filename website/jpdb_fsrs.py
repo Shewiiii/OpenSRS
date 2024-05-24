@@ -1,5 +1,6 @@
 from app.model import Carte
 from app.constants import Constants
+from app.reviews import dt, get_fsrs_from_reviews
 import json
 import pathlib
 from datetime import datetime, timezone
@@ -142,25 +143,13 @@ def jpdb_import(
             reviews = word_entry['reviews']
 
             # Récupère les variables FSRS en fonction des reviews
-            first_review = dt(reviews[0]['timestamp'])
-            card_srs = Carte(created=first_review)
-
-            for review in reviews:
-                timestamp = review['timestamp']
-                date = dt(timestamp)
-                try:
-                    rating = rating_dict[review['grade']]
-                    card_srs.rate(rating, now=date)
-                    add_review_entry(
-                        card_id, 
-                        deck_id, 
-                        user_id, 
-                        rating,
-                        timestamp=timestamp
-                    )
-                except Exception as e:
-                    print('Error', e)
-            variables = card_srs.get_variables()
+            variables = get_fsrs_from_reviews(
+                card_id, 
+                user_id, 
+                reviews, 
+                add_review=True, 
+                deck_id=deck_id,
+            )
 
             # Intègre tout dans OpenSRS
             create_card(
