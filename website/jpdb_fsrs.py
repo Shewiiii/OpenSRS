@@ -59,6 +59,7 @@ def jpdb_import(
     deck_id: int | None = None,
     save_in_db: bool = True,
     from_db: bool = True,
+    params: tuple = Constants.jpdb_updated_params,
 ) -> None:
     '''Importe les données du json reviews de jpdb vers OpenSRS.
 
@@ -86,6 +87,8 @@ def jpdb_import(
 
             from_db (bool): Récupère les infos de la table jpdb pour accélérer
             la génération de cartes.
+            
+            params (tuple): Les paramètres FSRS à utiliser.
 
     >>> jpdb_import(
         json_filename='15-05-24 review history.json',
@@ -166,6 +169,7 @@ def jpdb_import(
                 deck_id=deck_id,
                 rating_dict=jpdb_dict,
                 rating_key='grade',
+                params=params,
             )
 
             # Intègre tout dans OpenSRS
