@@ -226,18 +226,27 @@ def get_fsrs_from_reviews(
     card_id: int,
     user_id: int,
     reviews: dict,
+    params: tuple = Constants.default_params,
     add_review: bool = False,
     deck_id: int | None = None,
     rating_dict: dict = Constants.rating_dict,
+    rating_key: str = 'rating'
 ):
+    '''Récupère les variables FSRS en fonction d'un dictionnaire de reviews.
+
+       La variable "rating" est là car les clés dans le dico n'ont pas
+       les mêmes noms entre OpenSRS et jpdb (cursed).
+
+       Si add_review == True, l'id du deck doit être précisé.
+    '''
     first_review = dt(reviews[0]['timestamp'])
-    card_srs = Carte(created=first_review)
+    card_srs = Carte(created=first_review, params=params)
 
     for review in reviews:
         timestamp = review['timestamp']
         date = dt(timestamp)
         try:
-            rating = rating_dict[review['grade']]
+            rating = rating_dict[review[rating_key]]
             card_srs.rate(rating, now=date)
             if add_review:
                 add_review_entry(
@@ -245,23 +254,44 @@ def get_fsrs_from_reviews(
                     deck_id,
                     user_id,
                     rating,
-                    timestamp=timestamp
+                    timestamp=timestamp,
                 )
         except Exception as e:
-                    print('Error', e)
+            print('Error', e)
+    variables = card_srs.get_variables()
+    return variables
 
 
 def reschedule_cards(
     deck_id: int,
     user_id: int = Constants.temp_user_id,
+    params: tuple = Constants.default_params,
 ) -> None:
     '''Replanifie les cartes d'un deck. 
        Utile après avoir modifié la rétention ou les paramètres FSRS.
     '''
-    card_ids = get_card_ids_from_deck_id(0, 1)
-    for card_id in card_ids:
-        reviews = get_reviews_from_list(card_id, deck_id)
-        
+    ar = get_reviews_from_deck_id(deck_id)
+    card_reviews = {}
+    # Contient en clé un card_id et en valeur ses reviews
+    for review in ar:
+        card_id = review['card_id']
+        if card_id in card_reviews:
+            card_reviews[card_id].append(review)
+        else:
+            card_reviews[card_id] = [review]
+
+    cards_variables = {}
+    for card_id, reviews in card_reviews.items():
+        variables = get_fsrs_from_reviews(
+            card_id,
+            user_id,
+            reviews,
+            params=params,
+        )
+        cards_variables[card_id] = variables
+
+    bulk_update_cards_srs(cards_variables)
+
 
 # POUR TESTS:
 # from random import randint
