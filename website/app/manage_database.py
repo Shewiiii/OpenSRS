@@ -117,7 +117,7 @@ def delete_image(deck_id: int) -> None:
     '''Supprime dans la table images l'entrée d'une image d'un deck donné. 
     '''
     img_id, extension = get_img(deck_id)
-    if img_id and extension:
+    if img_id != None:
         path = (pathlib.Path(__file__).parents[1] / 'static/img/uploads'
                 / f'{img_id}{extension}')
         os.remove(path)
