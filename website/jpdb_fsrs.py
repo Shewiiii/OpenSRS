@@ -39,16 +39,7 @@ from import_jpdb_cards import *
 '''
 
 
-def dt(timestamp: int) -> datetime:
-    '''Convertit un timestamp en datetime utc.
-    '''
-    date = datetime.fromtimestamp(timestamp)
-    date = date.replace(tzinfo=timezone.utc)
-
-    return date
-
-
-rating_dict = {
+jpdb_dict = {
     'fail': Rating.Again,
     'nothing': Rating.Again,
     'something': Rating.Again,
@@ -67,7 +58,7 @@ def jpdb_import(
     exists: bool = False,
     deck_id: int | None = None,
     save_in_db: bool = True,
-
+    from_db: bool = True,
 ) -> None:
     '''Importe les données du json reviews de jpdb vers OpenSRS.
 
@@ -84,6 +75,17 @@ def jpdb_import(
 
             directory_path (pathlib ou string): chemin vers le 
             dossier contenant le fichier json. 
+
+            exists (bool): Si le deck existe déjà et qu'on souhaite
+            le compléter.
+
+            deck_id (id): L'identifiant du deck.
+
+            save_in_db (bool): Sauvegarde les données scrapées de jpdb dans
+            la table jpdb.
+
+            from_db (bool): Récupère les infos de la table jpdb pour accélérer
+            la génération de cartes.
 
     >>> jpdb_import(
         json_filename='15-05-24 review history.json',
@@ -135,20 +137,35 @@ def jpdb_import(
         if exists and word in processed_words:
             print(f'Mot déjà présent sauté: {word}')
         else:
-            # Requête vers jpdb:
-            # Récupère la lecture, définition, phrases et le pitch accent du mot
-            card = get_card_from_jpdb(vid, word, deck_id)
+            card = {}
+            if from_db:
+                # Requête vers la table jpdb:
+                card = get_card_from_db(vid, word, deck_id)
+                if card != {}:
+                    print(f'Mot {card['word']} ajouté de la table')
+                    wait = False
+
+            if card == {} or not from_db:
+                # Requête vers le site jpdb:
+                # Récupère la lecture, définition, 
+                # phrases et le pitch accent du mot
+                card = get_card_from_jpdb(vid, word, deck_id)
+                wait = True
+    
+            f_meaning = card['meanings'][0].replace('1. ', '')
 
             # Récupère les reviews du mot dans le json
             reviews = word_entry['reviews']
 
             # Récupère les variables FSRS en fonction des reviews
             variables = get_fsrs_from_reviews(
-                card_id, 
-                user_id, 
-                reviews, 
-                add_review=True, 
+                card_id,
+                user_id,
+                reviews,
+                add_review=True,
                 deck_id=deck_id,
+                rating_dict=jpdb_dict,
+                rating_key='grade',
             )
 
             # Intègre tout dans OpenSRS
@@ -157,12 +174,24 @@ def jpdb_import(
                 deck_id=deck_id,
                 front=card['word'],
                 front_sub=card['jp_sentence'],
-                back=f"{card['reading']} - {card['meanings'][0]}",
+                back=f"{card['reading']} - {f_meaning}",
                 back_sub=card['en_sentence'],
                 back_sub2=f'Pitch Accent: {card['pitchaccent']}',
                 tag='jpdb',
             )
             update_card_srs_from_dict(card_id, variables, user_id)
 
+            # Sauvgarde les données dans la table jpdb si voulu
+            if save_in_db:
+                add_jpdb_entry(
+                    vid,
+                    word,
+                    card['reading'],
+                    f_meaning,
+                    card['jp_sentence'],
+                    card['en_sentence'],
+                    card['pitchaccent'],
+                )
             # Attend entre chaque requête
-            time.sleep(0.6)
+            if wait:
+                time.sleep(0.6)

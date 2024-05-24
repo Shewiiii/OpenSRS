@@ -189,11 +189,12 @@ def import_deck(
     )
 
     for card in cards:
+        f_meaning = card['meanings'][0].replace('1. ', '')
         create_card(
             deck_id=deck_id,
             front=card['word'],
             front_sub=card['jp_sentence'],
-            back=f"{card['reading']} - {card['meanings'][0]}",
+            back=f"{card['reading']} - {f_meaning}",
             back_sub=card['en_sentence'],
             back_sub2=f'Pitch Accent: {card['pitchaccent']}',
             tag='jpdb',
@@ -271,7 +272,7 @@ def get_card_from_jpdb(
     # Trouve le motif indiquant le pitch accent, et le traduit en string
     pitchaccent_div = raw.find(
         'div', {'style': 'word-break: keep-all; display: flex;'})
-    
+
     if pitchaccent_div:
         pitchaccent = get_pitchaccent_pattern_from_div(pitchaccent_div)
     else:
@@ -289,4 +290,29 @@ def get_card_from_jpdb(
         'pitchaccent': pitchaccent,
     }
 
+    return card
+
+
+def get_card_from_db(
+    vid: int,
+    word: str,
+    deck_id: int,
+    table: str = Constants.jpdb_table,
+) -> dict:
+    card = {}
+    cursor = db.query(f"""SELECT * FROM {table} """
+                      f"""WHERE vid = %s AND word = %s;""",
+                      (vid, word))
+    result = cursor.fetchall()
+    for row in result:
+        card = {
+            'deck_id': deck_id,
+            'word': row[1],
+            'vid': row[0],
+            'reading': row[2],
+            'meanings': [row[3]],
+            'jp_sentence': row[4],
+            'en_sentence': row[5],
+            'pitchaccent': row[6],
+        }
     return card
