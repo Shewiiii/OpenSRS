@@ -7,3 +7,4 @@ secret.py
 config.py
 __pycache__/*
 website/app/config.py
+query.sql
