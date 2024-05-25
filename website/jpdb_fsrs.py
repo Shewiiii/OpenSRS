@@ -51,13 +51,13 @@ jpdb_dict = {
 
 def jpdb_import(
     json_filename: str,
+    sid: str,
     deck_name: str = 'Deck importé de jpdb',
     deck_description: str = '',
     user_id: int = Constants.temp_user_id,
     directory_path=pathlib.Path(__file__).parents[0] / 'jpdb',
     exists: bool = False,
     deck_id: int | None = None,
-    save_in_db: bool = True,
     from_db: bool = True,
     params: tuple = Constants.jpdb_updated_params,
     retention: tuple = Constants.default_retention,
@@ -68,6 +68,8 @@ def jpdb_import(
             json_filename (str): Le nom du json contenant tout
             l'historique d'un utilisateur de jpdb 
             (téléchargable dans les options).
+
+            sid (str): Un cookie de connection jpdb.
 
             deck_name (str): Le nom du deck à créer sur OpenSRS.
 
@@ -83,16 +85,17 @@ def jpdb_import(
 
             deck_id (id): L'identifiant du deck.
 
-            save_in_db (bool): Sauvegarde les données scrapées de jpdb dans
-            la table jpdb.
 
             from_db (bool): Récupère les infos de la table jpdb pour accélérer
             la génération de cartes.
-            
+
             params (tuple): Les paramètres FSRS à utiliser.
+
+            retention (tuple): La rétention souhaitée.
 
     >>> jpdb_import(
         json_filename='15-05-24 review history.json',
+        sid = '...',
         deck_name='jpdb',
         deck_description=(
             '19/05/2024, deck importé de jpdb. '
@@ -128,9 +131,23 @@ def jpdb_import(
         for card in cards:
             processed_words.append(card['front'])
 
+    # Définit les mots à ajouter (uniq. ceux étudiés)
+    studied = import_deck(
+        sid=sid,
+        jpdb_deck_id='global',
+        cards_count='all',
+        parameters='&show_only=known,learning',
+        create=False,
+        deep_import=False,
+        from_db=False
+    )
+    a_word = []
+    for card in studied:
+        a_word.append(card['word'])
+
     # Parcourt le json
     for word_entry in review_history:
-
+        # Vérifie si fait partie des mots étudiés
         card_id = get_free_id(table=Constants.cards_table)
 
         # Récupère le vid et le mot
@@ -140,6 +157,8 @@ def jpdb_import(
         # Vérifie si le mot est pas déjà dans le deck (si existe)
         if exists and word in processed_words:
             print(f'Mot déjà présent sauté: {word}')
+        elif word not in a_word:
+            print(f'Mot pas étudié: {word}')
         else:
             card = {}
             if from_db:
@@ -151,11 +170,11 @@ def jpdb_import(
 
             if card == {} or not from_db:
                 # Requête vers le site jpdb:
-                # Récupère la lecture, définition, 
+                # Récupère la lecture, définition,
                 # phrases et le pitch accent du mot
                 card = get_card_from_jpdb(vid, word, deck_id)
                 wait = True
-    
+
             f_meaning = card['meanings'][0].replace('1. ', '')
 
             # Récupère les reviews du mot dans le json
@@ -187,17 +206,17 @@ def jpdb_import(
             )
             update_card_srs_from_dict(card_id, variables, user_id)
 
-            # Sauvgarde les données dans la table jpdb si voulu
-            if save_in_db:
-                add_jpdb_entry(
-                    vid,
-                    word,
-                    card['reading'],
-                    f_meaning,
-                    card['jp_sentence'],
-                    card['en_sentence'],
-                    card['pitchaccent'],
-                )
+            # Sauvgarde les données dans la table jpdb
+            add_jpdb_entry(
+                vid,
+                word,
+                card['reading'],
+                f_meaning,
+                card['jp_sentence'],
+                card['en_sentence'],
+                card['pitchaccent'],
+            )
+
             # Attend entre chaque requête
             if wait:
                 time.sleep(0.6)

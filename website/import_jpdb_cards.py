@@ -63,21 +63,26 @@ def get_pitchaccent_pattern_from_div(
 def import_deck(
     sid: str,
     jpdb_deck_id: int,
-    cards_count: int,
+    cards_count: int | str = 'all',
     name: str = 'Deck jpdb importé',
     description: str = 'Ceci est un deck importé de jpdb.',
     user_id: str = Constants.temp_user_id,
     parameters: str = '&show_only=new&sort_by=by-frequency-global',
+    create: bool = False,
+    from_db: bool = True,
+    deep_import: bool = True,
 ) -> list:
     '''Importe un deck présent sur jpdb vers OpenSRS.
 
         Paramètres:
             sid (str): Cookies du compte contenant les decks à importer.
-            Note: Il est FORTEMENT recommandé d'utiliser les cookies d'un compte secondaire.
+            Note: Il est FORTEMENT recommandé d'utiliser les cookies
+            d'un compte secondaire.
 
             jpdb_deck_id (id): L'id du deck, présent dans l'url du deck.
 
-            cards_count (int): Nombre de cartes à importer.
+            cards_count (int, str): Nombre de cartes à importer.
+            'all' pour tout importer.
 
             parameters (str):  Les paramètres de tri/filtrage de la page.
             Sont ajoutées après l'url du deck.
@@ -88,11 +93,25 @@ def import_deck(
 
             user_id (int): L'id de l'utilisateur propriétaire du deck.
 
+            create (bool): Si True, crée un deck au lieu de seulement
+            retourner une liste.
+            
+            from_db (bool): Si True, prend les mots dispo dans la table jpdb
+            pour accélérer l'importation
+            
+            deep_import (bool): 
+                Si False, récupère uniquement 
+                le vid, le mot et sa définition.
+                
+                Si True, récupère en plus une phrase en Japonais, en
+                Anglais et le pitch accent.
+
         Retourne:
             cards (dict): Une liste contenant un dictionnaire 
             pour chacune des cartes.
             Les clés sont: 'vid', 'word', 'meanings', 'reading',
             'jp_sentence', 'en_sentence', 'pitchaccent'.
+
     '''
     if name == 'Deck jpdb importé':
         name += f' {jpdb_deck_id}'
@@ -100,14 +119,21 @@ def import_deck(
     cookie = {'sid': sid}
     url = f'https://jpdb.io/deck?id={jpdb_deck_id}' + parameters
 
+    # Récupère le nombre de cartes total si 'all' est précisé:
+    if cards_count == 'all':
+        raw = request(url, cookie)
+        p = raw.find('p', {'style': 'opacity: 0.75; text-align: right;'})
+        cards_count = int(re.findall(r'\d+', p.text)[-1])
+
+    # Des paramètres
     pages = cards_count//50 + 1
     added_words = 0
     jpdb_words = []
 
     # Premier passage: on retient les mots à ajouter plus tard:
     for i in range(pages):
-        raw = request(f'{url}&offset={pages*50}', cookie)
-        divs = raw.find_all('div', {'class': 'entry new'})
+        raw = request(f'{url}&offset={i*50}', cookie)
+        divs = raw.find_all('div', {'class': 'entry'})
 
         for new_div in divs:
             if added_words < cards_count:
@@ -126,9 +152,8 @@ def import_deck(
                         reading += letter
 
                 meanings = new_div.find('div').find_all(
-                    'div')[-1].text.split(';')
-                for i in range(len(meanings)):
-                    meanings[i] = meanings[i].strip()
+                    'div')[-1].text
+                meanings = meanings.strip()
 
                 jpdb_words.append({
                     'vid': vid,
@@ -146,60 +171,100 @@ def import_deck(
     # (phrase, phrase traduite et pitch accent)
     cards = []
     for word in jpdb_words:
-        url = f'https://jpdb.io/vocabulary/{word['vid']}/{word['word']}'
+        card = {}
 
-        raw = request(url, cookie)
-        example = raw.find('div', {'class': 'subsection-examples'})
+        if from_db:
+            # Requête vers la table jpdb:
+            card = get_card_from_db(word['vid'], word['word'])
+            if card != {}:
+                print(f'Mot {card['word']} ajouté de la table')
 
-        jp_sentence = ''
-        en_sentence = ''
-        if example != None:
-            jp = example.find('div', {'class': 'jp'})
-            if jp:
-                jp_sentence = jp.text
 
-            en = example.find('div', {'class': 'en'})
-            if en:
-                en_sentence = en.text
+            if card == {} or not from_db:
+                if deep_import:
+                    url = ('https://jpdb.io/vocabulary/'
+                          f'{word['vid']}/{word['word']}')
 
-        pitchaccent_div = raw.find(
-            'div', {'style': 'word-break: keep-all; display: flex;'})
-        if pitchaccent_div:
-            pitchaccent = get_pitchaccent_pattern_from_div(pitchaccent_div)
+                    raw = request(url, cookie)
+                    example = raw.find(
+                        'div', 
+                        {'class': 'subsection-examples'}
+                    )
+
+                    jp_sentence = ''
+                    en_sentence = ''
+                    if example != None:
+                        jp = example.find('div', {'class': 'jp'})
+                        if jp:
+                            jp_sentence = jp.text
+
+                        en = example.find('div', {'class': 'en'})
+                        if en:
+                            en_sentence = en.text
+
+                    pitchaccent_div = raw.find(
+                        'div', {
+                            'style': 'word-break: keep-all; display: flex;'
+                            }
+                    )
+                    if pitchaccent_div:
+                        pitchaccent = get_pitchaccent_pattern_from_div(
+                            pitchaccent_div
+                        )
+                    else:
+                        pitchaccent = ''
+                    # Attendre entre chaque requête
+                    time.sleep(0.6)
+                    card = word
+                    card.update({
+                        'jp_sentence': jp_sentence,
+                        'en_sentence': en_sentence,
+                        'pitchaccent': pitchaccent,
+                    })
+                    
+                    add_jpdb_entry(
+                        vid,
+                        word,
+                        card['reading'],
+                        f_meaning,
+                        card['jp_sentence'],
+                        card['en_sentence'],
+                        card['pitchaccent'],
+                    )
+        
         else:
-            pitchaccent = ''
+            card = word
+            card.update({
+                    'jp_sentence': '',
+                    'en_sentence': '',
+                    'pitchaccent': '',
+            })
 
-        card = word
-        card.update({
-            'jp_sentence': jp_sentence,
-            'en_sentence': en_sentence,
-            'pitchaccent': pitchaccent,
-        })
         cards.append(card)
-        # Attendre entre chaque requête
-        time.sleep(0.6)
+
 
     # Dernière étape: créer le deck
-    deck_id = get_free_id()
-    create_deck(
-        user_id=user_id,
-        deck_id=deck_id,
-        name=name,
-        description=description,
-    )
-
-    for card in cards:
-        f_meaning = card['meanings'][0].replace('1. ', '')
-        create_card(
+    if create:
+        deck_id = get_free_id()
+        create_deck(
+            user_id=user_id,
             deck_id=deck_id,
-            front=card['word'],
-            front_sub=card['jp_sentence'],
-            back=f"{card['reading']} - {f_meaning}",
-            back_sub=card['en_sentence'],
-            back_sub2=f'Pitch Accent: {card['pitchaccent']}',
-            tag='jpdb',
-
+            name=name,
+            description=description,
         )
+
+        for card in cards:
+            f_meaning = card['meanings'][0].replace('1. ', '')
+            create_card(
+                deck_id=deck_id,
+                front=card['word'],
+                front_sub=card['jp_sentence'],
+                back=f"{card['reading']} - {f_meaning}",
+                back_sub=card['en_sentence'],
+                back_sub2=f'Pitch Accent: {card['pitchaccent']}',
+                tag='jpdb',
+
+            )
     return cards
 
 
@@ -296,7 +361,7 @@ def get_card_from_jpdb(
 def get_card_from_db(
     vid: int,
     word: str,
-    deck_id: int,
+    deck_id: int | None = None,
     table: str = Constants.jpdb_table,
 ) -> dict:
     card = {}
@@ -306,7 +371,6 @@ def get_card_from_db(
     result = cursor.fetchall()
     for row in result:
         card = {
-            'deck_id': deck_id,
             'word': row[1],
             'vid': row[0],
             'reading': row[2],
@@ -315,4 +379,6 @@ def get_card_from_db(
             'en_sentence': row[5],
             'pitchaccent': row[6],
         }
+        if deck_id:
+            card.update({'deck_id': deck_id})
     return card
