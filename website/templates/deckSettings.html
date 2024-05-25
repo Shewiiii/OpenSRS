@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block head%}{% endblock %}
+
+{% block body%}
+<div class="tout">
+    <div class="flecheConteneur">
+        <div class="goback" onclick="redirection('/deck/{{ deck_id }}')">
+            <svg viewBox="0 -50 110 210" fill="none">
+                <line x1="105" y1="20" x2="35" y2="85" style="stroke: rgb(255, 255, 255); stroke-width: 10px" />
+                <line x1="35" y1="85" x2="105" y2="150" style="stroke: rgb(255, 255, 255); stroke-width: 10px" />
+            </svg>
+        </div>
+    </div>
+    <p style="padding-left: 20px;padding-top: 0;padding-bottom: 0;">Retour</p>
+    <h3>Paramètres du deck</h3>
+    <form action="" method="post" novalidate>
+        {{ form.hidden_tag() }}
+        <p>
+            {{ form.name.label }}<br>
+            {{ form.name(size=1000, class_="cardform", value=name, style="width:20rem;") }}
+            {% if form.name.errors == ['This field is required.'] %}
+            <p style="color: red;">Veuillez remplir ce champ</p>
+            {% endif %}
+        </p>
+        <p>
+            {{ form.description.label }}<br>
+            {{ form.description(size=1000, class_="cardform", value=description, style="width:40rem;") }}
+        </p>
+        <p>
+            {{ form.params.label }}<br>
+            {{ form.params(size=1000, class_="cardform", value=params, style="width:40rem;") }}
+            {% if form.params.errors == ['invalid FSRS parameters'] %}
+            <p style="color: red;">Paramètres FSRS invalides.</p>
+            {% endif %}
+        </p>
+        <p>
+            {{ form.retention.label }}<br>
+            {{ form.retention(size=1000, class_="cardform", value=retention, style="width:4rem;") }}
+            {% if form.retention.errors == ['invalid retention'] %}
+            <p style="color: red;">Rétention invalide. Doit être comprise entre 0 et 1.</p>
+            {% endif %}
+        </p>
+
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <ul>
+            {% for message in messages %}
+            <li class="OK">{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        {% endwith %}
+        <p>{{ form.submit(class_="bouton bouton1 creerbouton") }}</p>
+
+    </form>
+</div>
+<script>
+    function afficher() {
+        let elements = document.getElementsByClassName("element");
+        for (i = 0; i < elements.length; i++) {
+            if (i <= 23) {
+                elements[i].style.animation = "anim 1s"
+                elements[i].style.animationDelay = String(i * (0.1 - i * 0.005)) + "s";
+                elements[i].style.animationFillMode = "forwards";
+            } else {
+                elements[i].style.opacity = 1;
+            }
+            elements[i].style.display = "block";
+        }
+    }
+
+    let element = document.getElementsByClassName("tout")[0];
+
+    function redirection(lien) {
+        element.style.animation = 'fadeOut 0.2s'
+        setTimeout(() => {
+            window.location.replace(lien);
+        }, 200)
+    }
+
+    afficher()
+</script>
+{% endblock %}

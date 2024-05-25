@@ -28,6 +28,7 @@ class DB:
               ):
         if debug:
             print(sql)
+            print(params)
         try:
             cursor = self.conn.cursor(buffered=True)
         except:
@@ -191,6 +192,26 @@ def get_deck_retention(
     deck_infos, _ = get_deck_from_id(deck_id, user_id)
 
     return deck_infos['retention']
+
+
+def update_deck(
+    deck_id: int,
+    user_id: int,
+    new_values: dict,
+    table: str = Constants.decks_table
+) -> None:
+    '''Met à jour les infos d'un deck.
+    '''
+    params = []
+    new_values['params'] = str(new_values['params'])
+
+    sql = f"""UPDATE {table} SET """
+    for column, values in new_values.items():
+        sql += f"""{column} = %s,"""
+        params.append(values)
+    sql = sql[:-1] + f""" WHERE deck_id = %s AND user_id = %s;"""
+    params += [deck_id, user_id]
+    db.query(sql, params, debug=True)
 
 
 def delete_deck(
@@ -540,7 +561,6 @@ def bulk_update_cards_srs(
     srs_table: str = Constants.srs_table,
 ) -> None:
     '''Met à jour l'état de plusieurs cartes à partir d'un dico de variables.
-
         Paramètres:
             cards_variables (dict): Un dico avec en clé l'id de la carte et
             en valeur ses variables.

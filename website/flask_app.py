@@ -2,6 +2,7 @@ from flask import Flask, render_template, flash, redirect, request, session, mak
 from app.config import Config
 from app.card_form import Cardform
 from app.deck_form import Deckform
+from app.deck_settings import Decksettings
 from app.manage_database import *
 from app.reviews import *
 from datetime import datetime, timedelta
@@ -45,7 +46,7 @@ def decklist():
         'extension': '.jpg'
     }]
     '''
-    
+
     response = make_response(render_template(
         'decklist.html', title='Liste de decks', decks=decks))
 
@@ -53,7 +54,7 @@ def decklist():
 
 
 @app.route('/deck/<deck_id>')
-def deckPage(deck_id):
+def deck_page(deck_id):
     deckInfo, cards = get_deck_from_id(deck_id, Constants.temp_user_id)
     '''Exemple de deck:
     ({'deck_id': 0,
@@ -85,6 +86,59 @@ def deckPage(deck_id):
         cards=cards,
         img_id=img_id,
         extension=extension
+    )
+
+
+@app.route('/deck/<deck_id>/settings', methods=['GET', 'POST'])
+def deck_settings(deck_id):
+    deck_id = int(deck_id)
+
+    form = Decksettings()
+    deck = get_deck_from_id(deck_id, user_id=Constants.temp_user_id)[0]
+    name = deck['name']
+    description = deck['description']
+    params = eval(deck['params'])
+    retention = float(deck['retention'])
+
+    if form.validate_on_submit():
+        d = form.data
+        
+        name = d['name']
+        description = d['description']
+
+        u_params = eval(d['params'])
+        u_retention = float(d['retention'])
+        if params != u_params or retention != u_retention:
+            
+            u_params = params
+            u_retention = retention
+            
+            reschedule_cards(
+                deck_id,
+                params=params,
+                retention=retention
+            )
+
+        new_values = {
+            'name': name,
+            'description': description,
+            'params': params,
+            'retention': retention,
+        }
+        
+        update_deck(deck_id, Constants.temp_user_id, new_values)
+        flash('Le deck a bien été modifié !')
+        deck = get_deck_from_id(deck_id, user_id=Constants.temp_user_id)[0]
+
+    return render_template(
+        'deckSettings.html',
+        title='Paramètres du deck',
+        deck_id=deck_id,
+        name=name,
+        description=description,
+        params=params,
+        retention=retention,
+        form=form,
     )
 
 
@@ -140,8 +194,8 @@ def delete(deck_id):
 def confirm_delete(deck_id):
     delete_deck(deck_id)
     response = make_response(redirect('/decklist'))
-    response.set_cookie(f'NEW_CARDS_COUNT{deck_id}','', expires=0)
-    
+    response.set_cookie(f'NEW_CARDS_COUNT{deck_id}', '', expires=0)
+
     return response
 
 
@@ -221,7 +275,7 @@ def review(deck_id):
         card=card,
         new=new_cards_remaining,
         review=review_cards_remaining,
-            
+
     ))
     if first_review:
         response.set_cookie(
@@ -237,14 +291,14 @@ def review(deck_id):
 def rate(deck_id, card_id, rating):
     rating = Constants.rating_dict[rating]
     state = rate_card(card_id, deck_id, Constants.temp_user_id, rating)
-    
+
     if state == State.New:
         print('gneb drfothrdtlnitip')
         response = make_response(redirect(f'/deck/{deck_id}/review'))
         new = int(request.cookies.get(f'NEW_CARDS_COUNT{deck_id}'))
         response.set_cookie(f'NEW_CARDS_COUNT{deck_id}',
-                           str(new + 1),
-                           expires=pendulum.tomorrow(Constants.timezone))
+                            str(new + 1),
+                            expires=pendulum.tomorrow(Constants.timezone))
         return response
 
     else:
