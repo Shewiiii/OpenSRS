@@ -12,7 +12,7 @@ CREATE TABLE decks (
     description VARCHAR(1000),
     created DATETIME,
     params VARCHAR(255),
-    retention INT
+    retention FLOAT
 );
 CREATE TABLE cards2 (
     card_id INT PRIMARY KEY NOT NULL,

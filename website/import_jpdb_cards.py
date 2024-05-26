@@ -107,8 +107,8 @@ def import_deck(
                 Anglais et le pitch accent.
 
         Retourne:
-            cards (dict): Une liste contenant un dictionnaire 
-            pour chacune des cartes.
+            cards (dict): Un dictionnaire contenant un dictionnaire 
+            pour chacune des cartes en valeur et le mot en clé.
             Les clés sont: 'vid', 'word', 'meanings', 'reading',
             'jp_sentence', 'en_sentence', 'pitchaccent'.
 
@@ -145,20 +145,23 @@ def import_deck(
                 word = a.text
                 vid = re.findall(r'\d+', a['href'])[0]
 
-                raw_a = str(a)
+                rubies = a.findAll('ruby')
                 reading = ''
-                for letter in raw_a:
+                idk = ''
+                for ruby in rubies:
+                    idk += str(ruby)
+                for letter in idk:
                     if 12354 <= ord(letter) <= 12538:
                         reading += letter
 
-                meanings = new_div.find('div').find_all(
+                meaning = new_div.find('div').find_all(
                     'div')[-1].text
-                meanings = meanings.strip()
+                meaning = meaning.strip()
 
                 jpdb_words.append({
                     'vid': vid,
                     'word': word,
-                    'meanings': meanings,
+                    'meaning': meaning,
                     'reading': reading,
                 })
             added_words += 1
@@ -169,7 +172,7 @@ def import_deck(
     # Deuxième passage: on collecte les infos de chaque mot
     # à partir de la page vocabulary
     # (phrase, phrase traduite et pitch accent)
-    cards = []
+    cards = {}
     for word in jpdb_words:
         card = {}
 
@@ -240,7 +243,7 @@ def import_deck(
                     'pitchaccent': '',
             })
 
-        cards.append(card)
+        cards[word['word']] = card
 
 
     # Dernière étape: créer le deck

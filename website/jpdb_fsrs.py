@@ -6,6 +6,7 @@ import pathlib
 from datetime import datetime, timezone
 from fsrs import Rating
 from import_jpdb_cards import *
+from app.tatoeba import *
 
 
 '''Review history sample:
@@ -55,10 +56,11 @@ def jpdb_import(
     deck_name: str = 'Deck importé de jpdb',
     deck_description: str = '',
     user_id: int = Constants.temp_user_id,
-    directory_path=pathlib.Path(__file__).parents[0] / 'jpdb',
+    directory_path=pathlib.Path(__file__).parents[0] / 'local_data' /'jpdb',
     exists: bool = False,
     deck_id: int | None = None,
     from_db: bool = True,
+    from_tatoeba: bool = True,
     params: tuple = Constants.jpdb_updated_params,
     retention: tuple = Constants.default_retention,
 ) -> None:
@@ -85,9 +87,11 @@ def jpdb_import(
 
             deck_id (id): L'identifiant du deck.
 
-
             from_db (bool): Récupère les infos de la table jpdb pour accélérer
             la génération de cartes.
+
+            from_tatoeba (bool): Récupère les phrases d'exemple de tatoeba
+            et le pitch accent de fichiers locaux. (Lent mais + précis)
 
             params (tuple): Les paramètres FSRS à utiliser.
 
@@ -139,15 +143,12 @@ def jpdb_import(
         parameters='&show_only=known,learning',
         create=False,
         deep_import=False,
-        from_db=False
+        from_db=False,
     )
-    a_word = []
-    for card in studied:
-        a_word.append(card['word'])
 
     # Parcourt le json
     for word_entry in review_history:
-        # Vérifie si fait partie des mots étudiés
+
         card_id = get_free_id(table=Constants.cards_table)
 
         # Récupère le vid et le mot
@@ -157,10 +158,15 @@ def jpdb_import(
         # Vérifie si le mot est pas déjà dans le deck (si existe)
         if exists and word in processed_words:
             print(f'Mot déjà présent sauté: {word}')
-        elif word not in a_word:
+
+        # Vérifie si fait partie des mots étudiés
+        elif word not in studied:
             print(f'Mot pas étudié: {word}')
+
         else:
+            small_card = studied[word]
             card = {}
+
             if from_db:
                 # Requête vers la table jpdb:
                 card = get_card_from_db(vid, word, deck_id)
@@ -168,7 +174,19 @@ def jpdb_import(
                     print(f'Mot {card['word']} ajouté de la table')
                     wait = False
 
-            if card == {} or not from_db:
+            # Si pas trouvé dans la table et card de tatoeba
+            if card == {} and from_tatoeba:
+                card = {}
+                card['reading'] = small_card['reading']
+                card['vid'] = small_card['vid']
+                card['meanings'] = [small_card['meaning']]
+                
+                tatoeba = get_word_infos(word)
+                card.update(tatoeba)
+                wait = False
+                
+            # Si pas trouvé dans la table et card de jpdb (lent)
+            elif card == {} or not from_db:
                 # Requête vers le site jpdb:
                 # Récupère la lecture, définition,
                 # phrases et le pitch accent du mot

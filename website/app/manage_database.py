@@ -266,7 +266,7 @@ def create_card(
         back_sub2,
         tag,
         created,
-    ))
+    ), debug=True)
 
     insert_card_srs(card_id, deck_id, user_id, srs_table=srs_table)
 
