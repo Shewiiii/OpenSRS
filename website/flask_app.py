@@ -108,10 +108,11 @@ def deck_settings(deck_id):
 
         u_params = eval(d['params'])
         u_retention = float(d['retention'])
+
         if params != u_params or retention != u_retention:
             
-            u_params = params
-            u_retention = retention
+            params = u_params
+            retention = u_retention
             
             reschedule_cards(
                 deck_id,
