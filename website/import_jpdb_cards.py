@@ -123,7 +123,11 @@ def import_deck(
     if cards_count == 'all':
         raw = request(url, cookie)
         p = raw.find('p', {'style': 'opacity: 0.75; text-align: right;'})
-        cards_count = int(re.findall(r'\d+', p.text)[-1])
+        try:
+            cards_count = int(re.findall(r'\d+', p.text)[-1])
+        except Exception as e:
+            raise Exception("Assurez-vous d'avoir saisi le "
+                            "cookie sid associé au json.") from e
 
     # Des paramètres
     pages = cards_count//50 + 1
@@ -385,3 +389,29 @@ def get_card_from_db(
         if deck_id:
             card.update({'deck_id': deck_id})
     return card
+
+
+def get_cards_from_db(
+    deck_id: int | None = None,
+    table: str = Constants.jpdb_table,
+) -> dict:
+    '''Renvoie un dictionnaire avec en clé le vid de la carte
+       et en valeur son dico carte.
+    '''
+    cards = {}
+    cursor = db.query(f"""SELECT * FROM {table} """)
+    result = cursor.fetchall()
+    for row in result:
+        cards[row[0]] = {
+            'word': row[1],
+            'vid': row[0],
+            'reading': row[2],
+            'meanings': [row[3]],
+            'jp_sentence': row[4],
+            'en_sentence': row[5],
+            'pitchaccent': row[6],
+        }
+        if deck_id:
+            cards[row[0]].update({'deck_id': deck_id})
+    return cards
+    

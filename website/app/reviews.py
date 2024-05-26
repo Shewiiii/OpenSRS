@@ -225,14 +225,14 @@ def dt(timestamp: int) -> datetime:
 def get_fsrs_from_reviews(
     card_id: int,
     user_id: int,
-    reviews: dict,
+    reviews: list,
     params: tuple = Constants.default_params,
     retention: int = Constants.default_retention,
-    add_review: bool = False,
+    get_reviews: bool = False,
     deck_id: int | None = None,
     rating_dict: dict = Constants.rating_dict,
     rating_key: str = 'rating'
-):
+) -> dict | tuple[dict,list]:
     '''Récupère les variables FSRS en fonction d'un dictionnaire de reviews.
 
        La variable "rating" est là car les clés dans le dico n'ont pas
@@ -240,6 +240,8 @@ def get_fsrs_from_reviews(
 
        Si add_review == True, l'id du deck doit être précisé.
     '''
+    card_reviews = []
+
     first_review = dt(reviews[0]['timestamp'])
     card_srs = Carte(
         created=first_review,
@@ -253,18 +255,23 @@ def get_fsrs_from_reviews(
         try:
             rating = rating_dict[review[rating_key]]
             card_srs.rate(rating, now=date)
-            if add_review:
-                add_review_entry(
-                    card_id,
-                    deck_id,
-                    user_id,
-                    rating,
-                    timestamp=timestamp,
-                )
+            if get_reviews:
+                card_review = {
+                    'card_id': card_id,
+                    'deck_id': deck_id,
+                    'user_id': user_id,
+                    'rating': rating,
+                    'timestamp': timestamp,
+                    'state': -1,
+                }
+                card_reviews.append(card_review)
         except Exception as e:
             print('Error', e)
     variables = card_srs.get_variables()
-    return variables
+    if get_reviews:
+        return variables, card_reviews
+    else:
+        return variables
 
 
 def reschedule_cards(
@@ -296,7 +303,7 @@ def reschedule_cards(
             retention=retention,
         )
         cards_variables[card_id] = variables
-    
+
     bulk_update_cards_srs(cards_variables)
 
 

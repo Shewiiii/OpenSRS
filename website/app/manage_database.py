@@ -235,8 +235,8 @@ def delete_deck(
 
 
 def create_card(
-        deck_id=0,
-        card_id=None,
+        deck_id = 0,
+        card_id = None,
         front: str = "front",
         front_sub: str = "front_sub",
         back: str = "back",
@@ -270,6 +270,67 @@ def create_card(
 
     insert_card_srs(card_id, deck_id, user_id, srs_table=srs_table)
 
+
+def create_cards(
+    deck_id: int,
+    cards: list,
+    user_id: str = Constants.temp_new_cards,
+    cards_table: str = Constants.cards_table,
+    srs_table: str = Constants.srs_table,
+) -> None:
+    '''Crée des cartes à partir d'une liste de dico de cartes.
+       Une carte doit posséder les clés suivantes:
+       'front', 'front_sub', 'back', 'back_sub', 'back_sub2', 'tag'.
+    '''
+    # Table cartes
+    card_count = len(cards)
+    f_id = get_free_id()
+    ids = [i for i in range(f_id,f_id+card_count)]
+    sql = f"""INSERT INTO {cards_table} VALUES """
+    params = []
+    
+    # Cartes FSRS
+    card = Carte()
+    p = card.card.to_dict()
+    srs_params = []
+    srsql = (f"""INSERT INTO {srs_table} VALUES """
+             + "(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,NULL),"*card_count)[:-1]
+    
+    for i in range(card_count):
+        now = datetime.now(timezone.utc)
+        created = now.strftime("%Y-%m-%d %H:%M:%S")
+        sql += f"""(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s),"""
+        params += [
+            ids[i],
+            user_id,
+            deck_id,
+            cards[i]['front'],
+            cards[i]['front_sub'],
+            cards[i]['back'],
+            cards[i]['back_sub'],
+            cards[i]['back_sub2'],
+            cards[i]['tag'],
+            created,
+        ]
+        
+        srs_params += [
+            ids[i],
+            deck_id,
+            user_id,
+            p['due'],
+            p['stability'],
+            p['difficulty'],
+            p['elapsed_days'],
+            p['scheduled_days'],
+            p['reps'],
+            p['lapses'],
+            p['state'],
+        ]
+        
+    sql = sql[:-1] + ';'
+    
+    db.query(sql, params)
+    db.query(srsql, srs_params)
 
 def delete_card(
         card_id: int,
@@ -503,7 +564,7 @@ def add_review_entry(
         rating: str,
         state: int = -1,
         timestamp: int = 0,
-        reviews_table=Constants.reviews_table,
+        table=Constants.reviews_table,
 ) -> None:
     '''Ajoute une review dans la table reviews pour une carte,
         avec son deck et son utilisateur donné.
@@ -513,9 +574,35 @@ def add_review_entry(
         now = datetime.now(timezone.utc)
         timestamp = int(datetime.timestamp(now)*1000)
 
-    sql = (f"""INSERT INTO {reviews_table} VALUES """
+    sql = (f"""INSERT INTO {table} VALUES """
            f"""(%s,%s,%s,%s,%s,%s);""")
     db.query(sql, (card_id, deck_id, user_id, rating, timestamp, state))
+
+
+def add_review_entries(
+    reviews: list,
+    table=Constants.reviews_table,
+) -> None:
+    '''Ajoute plusieurs reviews.
+       La variable reviews doit contenir des dictionnaires avec les clés
+       suivantes: 
+       'card_id', 'deck_id', 'user_id', 'rating', 'timestamp', 'state'.
+    '''
+    sql = f"""INSERT INTO {table} VALUES """
+    params = []
+    for review in reviews:
+        sql += """(%s, %s, %s, %s, %s, %s),"""
+        params += [
+            review['card_id'],
+            review['deck_id'],
+            review['user_id'],
+            review['rating'],
+            review['timestamp'],
+            review['state'],
+        ]
+    sql = sql[:-1]
+    
+    db.query(sql, params)
 
 
 def update_card_srs_from_dict(
@@ -838,14 +925,41 @@ def add_jpdb_entry(
     meaning: str,
     jp_sentence: str,
     en_sentence: str,
-    pitch_accent: str,
+    pitchaccent: str,
     table: str = Constants.jpdb_table,
 ) -> None:
     '''Ajoute un mot et ses informations de jpdb dans la table jpdb.
     '''
     db.query(f"""INSERT INTO {table} VALUES """
              """(%s, %s, %s, %s, %s, %s, %s)""",
-             (vid, word, reading, meaning, jp_sentence, en_sentence, pitch_accent))
+             (vid, word, reading, meaning, jp_sentence, en_sentence, pitchaccent))
+
+
+def add_jpdb_entries(
+    entries: list,
+    table: str = Constants.jpdb_table,
+) -> None:
+    '''Ajoute des mots et ses informations de jpdb dans la table jpdb.
+       La liste rows doit contenir des dicos avec les clés suivantes:
+       'vid', 'word', 'reading', 'meaning',
+       'jp_sentence', 'en_sentence', 'pitch_accent'.
+    '''
+    sql = f"""INSERT INTO {table} VALUES """
+    params = []
+    for entry in entries:
+        sql += """(%s, %s, %s, %s, %s, %s, %s),"""
+        params += [
+            entry['vid'],
+            entry['word'],
+            entry['reading'],
+            entry['meaning'],
+            entry['jp_sentence'],
+            entry['en_sentence'],
+            entry['pitchaccent'],
+        ]
+    sql = sql[:-1]
+    
+    db.query(sql, params)
 
 
 def get_jpdb_data(table: str = Constants.jpdb_table) -> list:

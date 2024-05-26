@@ -1,9 +1,7 @@
-from app.model import Carte
 from app.constants import Constants
 from app.reviews import dt, get_fsrs_from_reviews, reschedule_cards
 import json
 import pathlib
-from datetime import datetime, timezone
 from fsrs import Rating
 from import_jpdb_cards import *
 from app.tatoeba import *
@@ -56,9 +54,10 @@ def jpdb_import(
     deck_name: str = 'Deck importé de jpdb',
     deck_description: str = '',
     user_id: int = Constants.temp_user_id,
-    directory_path=pathlib.Path(__file__).parents[0] / 'local_data' /'jpdb',
+    directory_path=pathlib.Path(__file__).parents[0] / 'local_data' / 'jpdb',
     exists: bool = False,
     deck_id: int | None = None,
+    card_count: int | str = 'all',
     from_db: bool = True,
     from_tatoeba: bool = True,
     params: tuple = Constants.jpdb_updated_params,
@@ -86,6 +85,8 @@ def jpdb_import(
             le compléter.
 
             deck_id (id): L'identifiant du deck.
+            
+            card_count (str,int): Le nombre de cartes à ajouter.
 
             from_db (bool): Récupère les infos de la table jpdb pour accélérer
             la génération de cartes.
@@ -96,6 +97,34 @@ def jpdb_import(
             params (tuple): Les paramètres FSRS à utiliser.
 
             retention (tuple): La rétention souhaitée.
+
+        Benchmark, importation de 15-05-24 review history.json,
+        sans data dans la table jpdb:
+            ver.0: ~2h+ ~100000 requêtes SQL
+            (sans API tatoeba, juste jpdb)
+
+            ver.1: ~2h+ ~100000 requêtes SQL
+            (avec API tatoeba, un peu plus long que ver.0 mais + d'exemples)
+
+            ver.2: 1h20 ~100000 requêtes SQL
+            (avec API tatoeba + Pitch accent local)
+
+            ver.3: 8min30  ~100000 requêtes SQL
+            (avec Local tatoeba + Pitch accent local)
+
+            ver.4: 6min ? ~95000 requêtes SQL
+            (avec Local tatoeba + Pitch accent local + bulk create&srs)
+
+            ver.5: 6min3 ~90000 requêtes SQL
+            (avec Local tatoeba + Pitch accent local + bulk create&srs&jpdb)
+
+            ver.6: ? ~6296 requêtes SQL
+            (avec Local tatoeba + Pitch accent local 
+            + bulk create&srs&jpdb&reviews)
+            
+            ver.7: 3min30 ~14 requêtes SQL
+            (avec Local tatoeba + Pitch accent local 
+            + bulk create&srs&jpdb&reviews&jpdb check)
 
     >>> jpdb_import(
         json_filename='15-05-24 review history.json',
@@ -139,21 +168,34 @@ def jpdb_import(
     studied = import_deck(
         sid=sid,
         jpdb_deck_id='global',
-        cards_count='all',
+        cards_count=card_count,
         parameters='&show_only=known,learning',
         create=False,
         deep_import=False,
         from_db=False,
     )
+    # Instance la liste de cartes, variables, entrées jpdb et
+    # toutes les reviews
+    # pour les mettre dans les tables de façon groupée (++rapide)
+    cards = []
+    cards_variables = {}
+    entries = []
+    reviews = []
 
+    # Instance la liste de review
+    word_count = len(review_history)
+    f_id = get_free_id(table=Constants.cards_table)
+    card_ids = [i for i in range(f_id, f_id+word_count)]
+    j = 0
+    # Requête vers la table jpdb:
+    db_cards = get_cards_from_db(deck_id)
+    
     # Parcourt le json
-    for word_entry in review_history:
-
-        card_id = get_free_id(table=Constants.cards_table)
+    for i in range(word_count):
 
         # Récupère le vid et le mot
-        word = word_entry['spelling']
-        vid = word_entry['vid']
+        word = review_history[i]['spelling']
+        vid = review_history[i]['vid']
 
         # Vérifie si le mot est pas déjà dans le deck (si existe)
         if exists and word in processed_words:
@@ -168,9 +210,8 @@ def jpdb_import(
             card = {}
 
             if from_db:
-                # Requête vers la table jpdb:
-                card = get_card_from_db(vid, word, deck_id)
-                if card != {}:
+                if vid in db_cards:
+                    card = db_cards[vid]
                     print(f'Mot {card['word']} ajouté de la table')
                     wait = False
 
@@ -180,11 +221,11 @@ def jpdb_import(
                 card['reading'] = small_card['reading']
                 card['vid'] = small_card['vid']
                 card['meanings'] = [small_card['meaning']]
-                
+
                 tatoeba = get_word_infos(word)
                 card.update(tatoeba)
                 wait = False
-                
+
             # Si pas trouvé dans la table et card de jpdb (lent)
             elif card == {} or not from_db:
                 # Requête vers le site jpdb:
@@ -196,45 +237,63 @@ def jpdb_import(
             f_meaning = card['meanings'][0].replace('1. ', '')
 
             # Récupère les reviews du mot dans le json
-            reviews = word_entry['reviews']
+            jpdb_reviews = review_history[i]['reviews']
 
-            # Récupère les variables FSRS en fonction des reviews
-            variables = get_fsrs_from_reviews(
-                card_id,
+            # Récupère les variables FSRS en fonction des reviews (après)
+            variables, card_reviews = get_fsrs_from_reviews(
+                card_ids[j],
                 user_id,
-                reviews,
-                add_review=True,
+                jpdb_reviews,
+                get_reviews=True,
                 deck_id=deck_id,
                 rating_dict=jpdb_dict,
                 rating_key='grade',
                 params=params,
                 retention=retention
             )
+            # Ajoute les reviews de la carte à la liste complète
+            reviews += card_reviews
+            # Intègre tout dans OpenSRS (après)
+            open_card = {
+                'card_id': card_ids[j],
+                'deck_id': deck_id,
+                'front': card['word'],
+                'front_sub': card['jp_sentence'],
+                'back': f"{card['reading']} - {f_meaning}",
+                'back_sub': card['en_sentence'],
+                'back_sub2': f'Pitch Accent: {card['pitchaccent']}',
+                'tag': 'jpdb',
+            }
+            cards.append(open_card)
+            print('Ajout:', word)
+            cards_variables[card_ids[j]] = variables
 
-            # Intègre tout dans OpenSRS
-            create_card(
-                card_id=card_id,
-                deck_id=deck_id,
-                front=card['word'],
-                front_sub=card['jp_sentence'],
-                back=f"{card['reading']} - {f_meaning}",
-                back_sub=card['en_sentence'],
-                back_sub2=f'Pitch Accent: {card['pitchaccent']}',
-                tag='jpdb',
-            )
-            update_card_srs_from_dict(card_id, variables, user_id)
-
-            # Sauvgarde les données dans la table jpdb
-            add_jpdb_entry(
-                vid,
-                word,
-                card['reading'],
-                f_meaning,
-                card['jp_sentence'],
-                card['en_sentence'],
-                card['pitchaccent'],
-            )
+            # Sauvgarde les données dans la table jpdb (après)
+            jpdb_entry = {
+                'vid': vid,
+                'word': word,
+                'reading': card['reading'],
+                'meaning': f_meaning,
+                'jp_sentence': card['jp_sentence'],
+                'en_sentence': card['en_sentence'],
+                'pitchaccent': card['pitchaccent'],
+            }
+            entries.append(jpdb_entry)
 
             # Attend entre chaque requête
             if wait:
                 time.sleep(0.6)
+                
+            # j incrémente, correspond à l'indice de l'id de la carte.
+            j += 1
+
+    # Intègre tout en bulk:
+    create_cards(deck_id, cards, user_id)
+    add_review_entries(reviews)
+    bulk_update_cards_srs(cards_variables)
+    add_jpdb_entries(entries)
+
+# delete_jpdb_data()
+# ids = get_all_ids(table=Constants.decks_table)
+# for id in ids:
+#     delete_deck(id)
