@@ -523,13 +523,10 @@ def get_deck_from_id(
         if search != '':
             sql += (f"(SELECT * FROM {cards_table} WHERE "
                     "front LIKE %s "
-                    "OR front_sub LIKE %s "
                     "OR back LIKE %s "
-                    "OR back_sub LIKE %s "
-                    "OR back_sub2 LIKE %s "
                     "OR tag LIKE %s) AS search "
                     )
-            params += [f'%{search}%']*6
+            params += [f'%{search}%']*4
         else:
             sql += f"{cards_table} "
 
@@ -559,13 +556,10 @@ def get_deck_from_id(
         if search != '':
             sql += (f"(SELECT * FROM {cards_table} WHERE "
                     "front LIKE %s "
-                    "OR front_sub LIKE %s "
                     "OR back LIKE %s "
-                    "OR back_sub LIKE %s "
-                    "OR back_sub2 LIKE %s "
                     "OR tag LIKE %s) AS search "
                     )
-            params += [f'%{search}%']*6
+            params += [f'%{search}%']*4
         else:
             sql += f"{cards_table} "
 
