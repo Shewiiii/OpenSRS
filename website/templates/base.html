@@ -16,12 +16,12 @@
 
 <body>
     {% if title %}
-    <div id="title" onclick="location.href = '/'" style="cursor: pointer;">
+    <div id="title" onclick="location.href = '/'" style="cursor: pointer;width: 12rem;">
         <h3>OpenSRS</h3>
     </div>
     {% else %}
     <div id="title">
-        <h1 onclick="location.href = '/'" style="cursor: pointer;">OpenSRS</h1>
+        <h1 onclick="location.href = '/'" style="cursor: pointer;width: 20rem;">OpenSRS</h1>
     </div>
     {% endif %}
     {% block body%}{% endblock %}
