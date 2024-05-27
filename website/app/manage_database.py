@@ -235,8 +235,8 @@ def delete_deck(
 
 
 def create_card(
-        deck_id = 0,
-        card_id = None,
+        deck_id=0,
+        card_id=None,
         front: str = "front",
         front_sub: str = "front_sub",
         back: str = "back",
@@ -285,17 +285,17 @@ def create_cards(
     # Table cartes
     card_count = len(cards)
     f_id = get_free_id()
-    ids = [i for i in range(f_id,f_id+card_count)]
+    ids = [i for i in range(f_id, f_id+card_count)]
     sql = f"""INSERT INTO {cards_table} VALUES """
     params = []
-    
+
     # Cartes FSRS
     card = Carte()
     p = card.card.to_dict()
     srs_params = []
     srsql = (f"""INSERT INTO {srs_table} VALUES """
              + "(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,NULL),"*card_count)[:-1]
-    
+
     for i in range(card_count):
         now = datetime.now(timezone.utc)
         created = now.strftime("%Y-%m-%d %H:%M:%S")
@@ -312,7 +312,7 @@ def create_cards(
             cards[i]['tag'],
             created,
         ]
-        
+
         srs_params += [
             ids[i],
             deck_id,
@@ -326,11 +326,12 @@ def create_cards(
             p['lapses'],
             p['state'],
         ]
-        
+
     sql = sql[:-1] + ';'
-    
+
     db.query(sql, params)
     db.query(srsql, srs_params)
+
 
 def delete_card(
         card_id: int,
@@ -494,6 +495,8 @@ def get_decks_from_user(
 def get_deck_from_id(
         deck_id: int,
         user_id: int,
+        offset: int = 0,
+        show: int | str = 'all',
         decks_table=Constants.decks_table,
         cards_table=Constants.cards_table,
 ) -> None | tuple[dict, list[dict]]:
@@ -511,6 +514,15 @@ def get_deck_from_id(
 
     else:
         firstRow = result[0]
+        
+        # Pour compter le nombre total de cartes (un peu sale)
+        sql = (f"""SELECT COUNT(*) FROM {cards_table} """
+           f"""WHERE deck_id = %s """
+           f"""AND user_id = %s;""")
+        cursor = db.query(sql, (deck_id, user_id))
+        result = cursor.fetchall()
+        card_count = result[0][0]
+        
         # garde les infos du deck dans une variable
         deckInfos = {
             'deck_id': firstRow[0],
@@ -519,12 +531,19 @@ def get_deck_from_id(
             'created': firstRow[4],
             'params': firstRow[5],
             'retention': firstRow[6],
+            'card_count': card_count,
         }
         # 2ème requête pour obtenir toutes les cartes de ce deck, met les les cartes dans une liste cards
         sql = (f"""SELECT * FROM {cards_table} """
                f"""WHERE {cards_table}.deck_id = %s """
-               f"""AND {cards_table}.user_id = %s;""")
-        cursor = db.query(sql, (deck_id, user_id))
+               f"""AND {cards_table}.user_id = %s""")
+        params = [deck_id, user_id]
+
+        if show != 'all':
+            sql += f""" LIMIT %s, %s"""
+            params += [offset, show]
+
+        cursor = db.query(sql, params)
 
         result = cursor.fetchall()
         cards = []
@@ -601,7 +620,7 @@ def add_review_entries(
             review['state'],
         ]
     sql = sql[:-1]
-    
+
     db.query(sql, params)
 
 
@@ -958,7 +977,7 @@ def add_jpdb_entries(
             entry['pitchaccent'],
         ]
     sql = sql[:-1]
-    
+
     db.query(sql, params)
 
 

@@ -55,7 +55,25 @@ def decklist():
 
 @app.route('/deck/<deck_id>')
 def deck_page(deck_id):
-    deckInfo, cards = get_deck_from_id(deck_id, Constants.temp_user_id)
+    # Gestion des pages:
+    page = request.args.get('page', type=int)
+    if page == None:
+        page_change = False
+        page = 1
+        offset = 0
+    else:
+        page_change = True
+        offset = page*50-50
+
+    deckInfo, cards = get_deck_from_id(
+        deck_id,
+        Constants.temp_user_id,
+        show = 50,
+        offset=offset
+    )
+
+    page_count = deckInfo['card_count']//50+1
+
     '''Exemple de deck:
     ({'deck_id': 0,
       'name': 'name',
@@ -85,7 +103,11 @@ def deck_page(deck_id):
         deckInfo=deckInfo,
         cards=cards,
         img_id=img_id,
-        extension=extension
+        extension=extension,
+        offset=offset,
+        page_change=page_change,
+        page=page,
+        page_count=page_count
     )
 
 
@@ -102,7 +124,7 @@ def deck_settings(deck_id):
 
     if form.validate_on_submit():
         d = form.data
-        
+
         name = d['name']
         description = d['description']
 
@@ -110,10 +132,10 @@ def deck_settings(deck_id):
         u_retention = float(d['retention'])
 
         if params != u_params or retention != u_retention:
-            
+
             params = u_params
             retention = u_retention
-            
+
             reschedule_cards(
                 deck_id,
                 params=params,
@@ -126,7 +148,7 @@ def deck_settings(deck_id):
             'params': params,
             'retention': retention,
         }
-        
+
         update_deck(deck_id, Constants.temp_user_id, new_values)
         flash('Le deck a bien été modifié !')
         deck = get_deck_from_id(deck_id, user_id=Constants.temp_user_id)[0]
