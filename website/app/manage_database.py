@@ -526,7 +526,7 @@ def get_deck_from_id(
                     "OR back LIKE %s "
                     "OR tag LIKE %s) AS search "
                     )
-            params += [f'%{search}%']*4
+            params += [f'%{search}%']*3
         else:
             sql += f"{cards_table} "
 
@@ -559,7 +559,7 @@ def get_deck_from_id(
                     "OR back LIKE %s "
                     "OR tag LIKE %s) AS search "
                     )
-            params += [f'%{search}%']*4
+            params += [f'%{search}%']*3
         else:
             sql += f"{cards_table} "
 
