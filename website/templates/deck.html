@@ -53,37 +53,48 @@
                     deck</a>
             </div>
             <div class="changerPage">
-                <a id="precedent" href="{{ deckInfo['deck_id'] }}?page={{ page-1 }}">
-                    <svg fill="#ffffff" height="40px" width="40px" version="1.1" id="Layer_1"
-                        xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
-                        viewBox="0 -180 330.002 510.002" xml:space="preserve" style="--darkreader-inline-fill: #000000;"
-                        data-darkreader-inline-fill="" stroke="#ffffff" transform="matrix(-1, 0, 0, 1, 0, 0)">
-                        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
-                        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round" stroke="#CCCCCC"
-                            stroke-width="7.9200479999999995"></g>
-                        <g id="SVGRepo_iconCarrier">
-                            <path id="XMLID_226_"
-                                d="M233.252,155.997L120.752,6.001c-4.972-6.628-14.372-7.97-21-3c-6.628,4.971-7.971,14.373-3,21 l105.75,140.997L96.752,306.001c-4.971,6.627-3.627,16.03,3,21c2.698,2.024,5.856,3.001,8.988,3.001 c4.561,0,9.065-2.072,12.012-6.001l112.5-150.004C237.252,168.664,237.252,161.33,233.252,155.997z">
-                            </path>
-                        </g>
-                    </svg>
-                </a>
-                <p>Page {{ page }}/{{ page_count }}</p>
-                <a id="suivant" href="{{ deckInfo['deck_id'] }}?page={{ page+1 }}">
-                    <svg fill="#ffffff" height="40px" width="40px" version="1.1" id="Layer_1"
-                        xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
-                        viewBox="-100 -180 330.002 510.002" xml:space="preserve"
-                        style="--darkreader-inline-fill: #000000;" data-darkreader-inline-fill="" stroke="#ffffff">
-                        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
-                        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round" stroke="#CCCCCC"
-                            stroke-width="7.9200479999999995"></g>
-                        <g id="SVGRepo_iconCarrier">
-                            <path id="XMLID_226_"
-                                d="M233.252,155.997L120.752,6.001c-4.972-6.628-14.372-7.97-21-3c-6.628,4.971-7.971,14.373-3,21 l105.75,140.997L96.752,306.001c-4.971,6.627-3.627,16.03,3,21c2.698,2.024,5.856,3.001,8.988,3.001 c4.561,0,9.065-2.072,12.012-6.001l112.5-150.004C237.252,168.664,237.252,161.33,233.252,155.997z">
-                            </path>
-                        </g>
-                    </svg>
-                </a>
+                <input name="rechercheCarte" id="rechercheCarte" placeholder="Rechercher..." value="{{ search }}">
+                {% if search != '' %}
+                <a id="precedent" href="{{ deckInfo['deck_id'] }}?page={{ page-1 }}&search={{ search }}">
+                    {% else %}
+                    <a id="precedent" href="{{ deckInfo['deck_id'] }}?page={{ page-1 }}">
+                        {% endif %}
+                        <svg fill="#ffffff" height="40px" width="40px" version="1.1" id="Layer_1"
+                            xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+                            viewBox="0 -180 330.002 510.002" xml:space="preserve"
+                            style="--darkreader-inline-fill: #000000;" data-darkreader-inline-fill="" stroke="#ffffff"
+                            transform="matrix(-1, 0, 0, 1, 0, 0)">
+                            <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                            <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"
+                                stroke="#CCCCCC" stroke-width="7.9200479999999995"></g>
+                            <g id="SVGRepo_iconCarrier">
+                                <path id="XMLID_226_"
+                                    d="M233.252,155.997L120.752,6.001c-4.972-6.628-14.372-7.97-21-3c-6.628,4.971-7.971,14.373-3,21 l105.75,140.997L96.752,306.001c-4.971,6.627-3.627,16.03,3,21c2.698,2.024,5.856,3.001,8.988,3.001 c4.561,0,9.065-2.072,12.012-6.001l112.5-150.004C237.252,168.664,237.252,161.33,233.252,155.997z">
+                                </path>
+                            </g>
+                        </svg>
+                    </a>
+                    <p>Page {{ page }}/{{ page_count }}</p>
+                    {% if search != '' %}
+                    <a id="suivant" href="{{ deckInfo['deck_id'] }}?page={{ page+1 }}&search={{ search }}">
+                        {% else %}
+                        <a id="suivant" href="{{ deckInfo['deck_id'] }}?page={{ page+1 }}">
+                            {% endif %}
+                            <svg fill="#ffffff" height="40px" width="40px" version="1.1" id="Layer_1"
+                                xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+                                viewBox="-100 -180 330.002 510.002" xml:space="preserve"
+                                style="--darkreader-inline-fill: #000000;" data-darkreader-inline-fill=""
+                                stroke="#ffffff">
+                                <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                                <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"
+                                    stroke="#CCCCCC" stroke-width="7.9200479999999995"></g>
+                                <g id="SVGRepo_iconCarrier">
+                                    <path id="XMLID_226_"
+                                        d="M233.252,155.997L120.752,6.001c-4.972-6.628-14.372-7.97-21-3c-6.628,4.971-7.971,14.373-3,21 l105.75,140.997L96.752,306.001c-4.971,6.627-3.627,16.03,3,21c2.698,2.024,5.856,3.001,8.988,3.001 c4.561,0,9.065-2.072,12.012-6.001l112.5-150.004C237.252,168.664,237.252,161.33,233.252,155.997z">
+                                    </path>
+                                </g>
+                            </svg>
+                        </a>
 
             </div>
         </div>
@@ -119,15 +130,15 @@
         });
 
         function désassombrir() {
-            ass = document.getElementsByClassName("assombreur")[0].style;
-                ass.animation = "fadeOut 0.2s";
-                ass.animationFillMode = "forwards";
+            assom = document.getElementsByClassName("assombreur")[0].style;
+            assom.animation = "fadeOut 0.2s";
+            assom.animationFillMode = "forwards";
         };
 
         function assombrir() {
-            let ass = document.getElementsByClassName('assombreur')[0].style;
-            ass.animation = "fadeIn 0.2s";
-            ass.animationFillMode = "forwards";
+            let assom = document.getElementsByClassName('assombreur')[0].style;
+            assom.animation = "fadeIn 0.2s";
+            assom.animationFillMode = "forwards";
 
         };
 
@@ -140,6 +151,16 @@
             }, 200)
         };
 
+        let rechercheCarte = document.getElementById('rechercheCarte');
+
+        rechercheCarte.addEventListener("keyup", ({ key }) => {
+            if (key === "Enter") {
+                var search = rechercheCarte.value;
+
+                var url = '/deck/{{ deckInfo['deck_id'] }}?search=' + search;
+                window.location.replace(url);
+            }
+        })
         désassombrir()
     </script>
     {% endblock %}

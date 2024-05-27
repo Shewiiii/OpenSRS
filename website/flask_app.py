@@ -64,14 +64,20 @@ def deck_page(deck_id):
     else:
         page_change = True
         offset = page*50-50
+        
+    # Gestion de la recherche:
+    search = request.args.get('search', type=str)
+    if search == None:
+        search = ''
 
     deckInfo, cards = get_deck_from_id(
         deck_id,
         Constants.temp_user_id,
-        show = 50,
-        offset=offset
+        show=50,
+        offset=offset,
+        search=search,
     )
-
+    
     page_count = deckInfo['card_count']//50+1
 
     '''Exemple de deck:
@@ -107,7 +113,8 @@ def deck_page(deck_id):
         offset=offset,
         page_change=page_change,
         page=page,
-        page_count=page_count
+        page_count=page_count,
+        search=search
     )
 
 

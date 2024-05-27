@@ -497,6 +497,7 @@ def get_deck_from_id(
         user_id: int,
         offset: int = 0,
         show: int | str = 'all',
+        search: str = '',
         decks_table=Constants.decks_table,
         cards_table=Constants.cards_table,
 ) -> None | tuple[dict, list[dict]]:
@@ -504,8 +505,8 @@ def get_deck_from_id(
     '''
     # 1ère requête pour vérifier si un deck existe pour un utilisateur donné
     sql = (f"""SELECT * FROM {decks_table} """
-           f"""WHERE {decks_table}.deck_id = %s """
-           f"""AND {decks_table}.user_id = %s;""")
+           f"""WHERE deck_id = %s """
+           f"""AND user_id = %s;""")
     cursor = db.query(sql, (deck_id, user_id))
     result = cursor.fetchall()
 
@@ -514,15 +515,33 @@ def get_deck_from_id(
 
     else:
         firstRow = result[0]
-        
+
         # Pour compter le nombre total de cartes (un peu sale)
-        sql = (f"""SELECT COUNT(*) FROM {cards_table} """
-           f"""WHERE deck_id = %s """
-           f"""AND user_id = %s;""")
-        cursor = db.query(sql, (deck_id, user_id))
+        params = []
+        sql = "SELECT COUNT(*) FROM "
+        # Filtre recherche (jtavais dit que c'était sale..)
+        if search != '':
+            sql += (f"(SELECT * FROM {cards_table} WHERE "
+                    "front LIKE %s "
+                    "OR front_sub LIKE %s "
+                    "OR back LIKE %s "
+                    "OR back_sub LIKE %s "
+                    "OR back_sub2 LIKE %s "
+                    "OR tag LIKE %s) AS search "
+                    )
+            params += [f'%{search}%']*6
+        else:
+            sql += f"{cards_table} "
+
+        # Suite de la requête
+        sql += (f"""WHERE deck_id = %s """
+                f"""AND user_id = %s;""")
+        params += [deck_id, user_id]
+
+        cursor = db.query(sql, params)
         result = cursor.fetchall()
         card_count = result[0][0]
-        
+
         # garde les infos du deck dans une variable
         deckInfos = {
             'deck_id': firstRow[0],
@@ -533,14 +552,31 @@ def get_deck_from_id(
             'retention': firstRow[6],
             'card_count': card_count,
         }
-        # 2ème requête pour obtenir toutes les cartes de ce deck, met les les cartes dans une liste cards
-        sql = (f"""SELECT * FROM {cards_table} """
-               f"""WHERE {cards_table}.deck_id = %s """
-               f"""AND {cards_table}.user_id = %s""")
-        params = [deck_id, user_id]
+        # 2ème requête pour obtenir toutes les cartes de ce deck, 
+        # met les les cartes dans une liste cards
+        sql = "SELECT * FROM "
+        params = []
+        if search != '':
+            sql += (f"(SELECT * FROM {cards_table} WHERE "
+                    "front LIKE %s "
+                    "OR front_sub LIKE %s "
+                    "OR back LIKE %s "
+                    "OR back_sub LIKE %s "
+                    "OR back_sub2 LIKE %s "
+                    "OR tag LIKE %s) AS search "
+                    )
+            params += [f'%{search}%']*6
+        else:
+            sql += f"{cards_table} "
 
+        # Suite de la requête
+        sql += (f"""WHERE deck_id = %s """
+                f"""AND user_id = %s """)
+        params += [deck_id, user_id]
+
+        # Filtre affichage:
         if show != 'all':
-            sql += f""" LIMIT %s, %s"""
+            sql += f"""LIMIT %s, %s;"""
             params += [offset, show]
 
         cursor = db.query(sql, params)
