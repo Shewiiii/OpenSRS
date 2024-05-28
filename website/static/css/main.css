@@ -235,20 +235,30 @@ svg {
   flex-direction: row;
   justify-content: left;
   gap: 2em;
-  margin: 2rem 6rem;
 }
 
 .deckBarre {
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
+  justify-content: space-around;
+  margin-top: 20px;
+  margin-bottom: 20px;
 }
 
-.changerPage {
-  margin: 2rem 6rem;
+.naviguerPage {
   display: flex;
   flex-direction: row;
   gap: 1.5rem;
+}
+
+.changerPage {
+  display: flex;
+  flex-direction: row;
+  gap: 30px;
+}
+
+.boutonDeck {
+  width: 9.5em;
 }
 
 #suivant {
@@ -408,12 +418,6 @@ svg {
 
 .select {
   width: 50%;
-}
-
-.deckList {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
 }
 
 .element {
@@ -695,7 +699,6 @@ svg {
 
 .cardEntry {
   width: 85%;
-  height: 105px;
   margin: auto;
   padding: 30px;
   margin-bottom: 30px;
@@ -704,6 +707,10 @@ svg {
 }
 
 .front {
+  margin: 10px 0 10px 0;
+}
+
+.back {
   margin: 10px 0 10px 0;
 }
 
@@ -736,9 +743,44 @@ svg {
 }
 /* } */
 
+#idkmarge30 {
+  padding-top: 30px;
+}
+
 @media screen and (max-width: 1235px) {
+  .decklist {
+    flex-direction: column;
+  }
+  .element {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .boutonDeck {
+    width: 9.2em;
+    font-size: 0.85em;
+  }
+  .front {
+    font-size: 1.2rem;
+  }
+  .tag {
+    font-size: 0.7rem;
+  }
+  .cardEntry {
+    height: auto;
+  }
+  .deckBarre {
+    flex-direction: column;
+  }
   .boutons {
-    justify-content: center;
+    margin: auto;
+  }
+  .changerPage {
+    flex-direction: column;
+    margin: 30px auto auto auto;
+    gap: 20px;
+  }
+  #idkmarge30 {
+    padding-top: 0px;
   }
   /* .flecheConteneur {
     padding-left: 45%;
