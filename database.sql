@@ -1,3 +1,11 @@
+DROP TABLE users;
+DROP TABLE decks;
+DROP TABLE cards2;
+DROP TABLE reviews;
+DROP TABLE images;
+DROP TABLE srs;
+DROP TABLE jpdb;
+DROP TABLE session;
 CREATE TABLE users (
     user_id INT NOT NULL PRIMARY KEY,
     username VARCHAR(255),
@@ -12,7 +20,8 @@ CREATE TABLE decks (
     description VARCHAR(1000),
     created DATETIME,
     params VARCHAR(255),
-    retention FLOAT
+    retention FLOAT,
+    new_cards_count INT
 );
 CREATE TABLE cards2 (
     card_id INT PRIMARY KEY NOT NULL,
@@ -52,6 +61,12 @@ CREATE TABLE srs (
     lapses INT,
     state INT,
     last_review DATETIME
+);
+CREATE TABLE session (
+    deck_id INT PRIMARY KEY REFERENCES decks(deck_id),
+    new_cards_remaining INT,
+    timezone VARCHAR(50),
+    expires DATETIME
 );
 CREATE TABLE jpdb (
     vid INT,

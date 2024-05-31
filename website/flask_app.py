@@ -6,20 +6,12 @@ from app.deck_settings import Decksettings
 from app.manage_database import *
 from app.reviews import *
 from datetime import datetime, timedelta
-import re
 import pathlib
 import os
-import json
-import pendulum
 
 
 app = Flask(__name__)
 app.config.from_object(Config)
-
-app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = '!nxbTjiPw7@Pb8'
-app.config['MYSQL_DB'] = 'cards'
 
 
 @app.route('/')
@@ -34,7 +26,7 @@ def home(name):
 
 @app.route('/decklist')
 def decklist():
-    decks = get_decks_from_user(request, user_id=1)
+    decks = get_decks_from_user(user_id=1)
     '''Exemple:
     [{
         'deck_id': 0,
@@ -64,7 +56,7 @@ def deck_page(deck_id):
     else:
         page_change = True
         offset = page*50-50
-        
+
     # Gestion de la recherche:
     search = request.args.get('search', type=str)
     if search == None:
@@ -72,12 +64,11 @@ def deck_page(deck_id):
 
     deckInfo, cards = get_deck_from_id(
         deck_id,
-        Constants.temp_user_id,
         show=50,
         offset=offset,
         search=search,
     )
-    
+
     page_count = deckInfo['card_count']//50+1
 
     '''Exemple de deck:
@@ -123,7 +114,7 @@ def deck_settings(deck_id):
     deck_id = int(deck_id)
 
     form = Decksettings()
-    deck = get_deck_from_id(deck_id, user_id=Constants.temp_user_id)[0]
+    deck = get_deck_from_id(deck_id, show=0)[0]
     name = deck['name']
     description = deck['description']
     params = eval(deck['params'])
@@ -156,9 +147,9 @@ def deck_settings(deck_id):
             'retention': retention,
         }
 
-        update_deck(deck_id, Constants.temp_user_id, new_values)
+        update_deck(deck_id, new_values)
         flash('Le deck a bien été modifié !')
-        deck = get_deck_from_id(deck_id, user_id=Constants.temp_user_id)[0]
+        deck = get_deck_from_id(deck_id, show=0)[0]
 
     return render_template(
         'deckSettings.html',
@@ -175,7 +166,7 @@ def deck_settings(deck_id):
 @app.route('/deck/<deck_id>/add', methods=['GET', 'POST'])
 def cardform(deck_id):
     form = Cardform()
-    name = get_deck_from_id(deck_id, 1)[0]['name']
+    name = get_deck_from_id(deck_id, show=0)[0]['name']
 
     if form.validate_on_submit():
         front = form.front.data
@@ -211,7 +202,7 @@ def cardform(deck_id):
 
 @app.route('/deck/<deck_id>/delete')
 def delete(deck_id):
-    name = get_deck_from_id(deck_id, 1)[0]['name']
+    name = get_deck_from_id(deck_id, show=0)[0]['name']
 
     return render_template(
         'deleteDeck.html',
@@ -271,18 +262,13 @@ def deleteCard(card_id, deck_id):
 @app.route('/deck/<deck_id>/review')
 def review(deck_id):
     # gère limite de nouvelles cartes:
-    if f'NEW_CARDS_COUNT{deck_id}' in request.cookies:
-        new_cards_count = int(request.cookies.get(f'NEW_CARDS_COUNT{deck_id}'))
-        first_review = False
+    refresh_deck_session(deck_id)
+    new_cards_remaining = get_new_cards_remaining(deck_id)
 
-    else:
-        new_cards_count = 0
-        first_review = True
-
-    due_cards_srs = get_cards_srs_to_review_from_deck_id(
+    due_cards_srs = get_cards_srs_to_review(
         deck_id,
         new_cards_mode=Constants.new_cards_mode,
-        new_cards_limit=Constants.new_cards_limit - new_cards_count,
+        new_cards_limit=new_cards_remaining,
     )
     due_count = len(due_cards_srs)
 
@@ -294,27 +280,19 @@ def review(deck_id):
         card = get_card_from_card_id(card_id)
 
     # ajoute des stats: get_stats(due_cards_srs)
-    stats = get_review_stats(due_cards_srs)
+    stats = get_review_stats_from_deckid(deck_id)
     new_cards_remaining = stats['new']
     review_cards_remaining = stats['review']
 
     # réponse:
-    response = make_response(render_template(
+    return render_template(
         'review.html',
         title='Review',
         card=card,
         new=new_cards_remaining,
         review=review_cards_remaining,
 
-    ))
-    if first_review:
-        response.set_cookie(
-            f'NEW_CARDS_COUNT{deck_id}',
-            '0',
-            expires=pendulum.tomorrow(Constants.timezone),
-        )
-
-    return response
+    )
 
 
 @app.route('/deck/<deck_id>/review/<card_id>/<rating>')
@@ -323,16 +301,11 @@ def rate(deck_id, card_id, rating):
     state = rate_card(card_id, deck_id, Constants.temp_user_id, rating)
 
     if state == State.New:
-        print('gneb drfothrdtlnitip')
-        response = make_response(redirect(f'/deck/{deck_id}/review'))
-        new = int(request.cookies.get(f'NEW_CARDS_COUNT{deck_id}'))
-        response.set_cookie(f'NEW_CARDS_COUNT{deck_id}',
-                            str(new + 1),
-                            expires=pendulum.tomorrow(Constants.timezone))
-        return response
+        new_cards_remaining = get_new_cards_remaining(deck_id)
+        if new_cards_remaining >= 1:
+            decrease_new_cards_remaining(deck_id, number=1)
 
-    else:
-        return redirect(f'/deck/{deck_id}/review')
+    return redirect(f'/deck/{deck_id}/review')
 
 
 @app.route('/login', methods=['GET', 'POST'])

@@ -102,11 +102,10 @@ def get_due_cards_from_list(
     return due_cards
 
 
-def get_cards_srs_to_review_from_deck_id(
+def get_cards_srs_to_review(
         deck_id: int,
-        user_id: int = Constants.temp_user_id,
-        new_cards_limit: int = 10,
         new_cards_mode: str = 'end',
+        new_cards_limit: int = 10,
         srs_table=Constants.srs_table,
 ) -> dict:
     '''Renvoie la liste des cartes srs à review dans un deck donné.
@@ -114,7 +113,7 @@ def get_cards_srs_to_review_from_deck_id(
 
         Modes possibles: 'start', 'end' (par défaut), 'shuffle'.
     '''
-    cards_srs = get_cards_srs_from_deck_id(deck_id, user_id, table=srs_table)
+    cards_srs = get_cards_srs_from_deck_id(deck_id, table=srs_table)
     now = datetime.now()
     due_dict = {}
     new_cards = []
@@ -156,13 +155,12 @@ def rate_card(
     user_id: int,
     rating: Rating,
     srs_table: str = Constants.srs_table,
-    reviews_table: str = Constants.reviews_table,
 ) -> State:
     '''Ajoute une review dans la table reviews et replanifie une carte donnée.
     '''
     now = datetime.now(timezone.utc)
     # From db
-    variables = get_card_variables(card_id, user_id)
+    variables = get_card_variables(card_id)
 
     card = Carte()
     card.set_variables(variables)
@@ -171,7 +169,7 @@ def rate_card(
     # From class
     new_variables = card.get_variables()
     update_card_srs_from_dict(card_id, new_variables,
-                              user_id, srs_table=srs_table)
+                              srs_table=srs_table)
 
     state = int(card.card.state)
     timestamp = int(datetime.timestamp(now))
@@ -193,12 +191,18 @@ def rate_card(
     return og_state
 
 
-def get_review_stats(
-    due_cards_srs: dict,
+def get_review_stats_from_deckid(
+    deck_id: int,
+    new_cards_mode: str = 'shuffle',
+    new_cards_limit: int = Constants.new_cards_limit,
 ) -> dict:
-    '''Retourne le nombre de cartes à revoir et nouvelles.
-        Doit être utilisé avec get_cards_srs_to_review_from_deck_id().
+    '''Retourne le nombre de cartes à revoir et nouvelles. 
     '''
+    due_cards_srs = get_cards_srs_to_review(
+        deck_id,
+        new_cards_mode,
+        new_cards_limit,
+    )
     new_cards_remaining = 0
     for card in due_cards_srs:
         if card['state'] == 0:
@@ -232,7 +236,7 @@ def get_fsrs_from_reviews(
     deck_id: int | None = None,
     rating_dict: dict = Constants.rating_dict,
     rating_key: str = 'rating'
-) -> dict | tuple[dict,list]:
+) -> dict | tuple[dict, list]:
     '''Récupère les variables FSRS en fonction d'un dictionnaire de reviews.
 
        La variable "rating" est là car les clés dans le dico n'ont pas

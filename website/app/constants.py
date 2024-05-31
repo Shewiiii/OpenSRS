@@ -3,12 +3,14 @@ class Constants:
     cards_table = 'cards2'
     decks_table = 'decks'
     image_table = 'images'
+    session_table = 'session'
     jpdb_table = 'jpdb'
     reviews_table = 'reviews'
     users_table = 'users'
     srs_table = 'srs'
     temp_user_id = 1
     temp_new_cards = 10
+    default_new = 10
     rating_dict = {
         'Again': Rating.Again, 
         'Hard': Rating.Hard, 
@@ -16,6 +18,7 @@ class Constants:
         'Easy': Rating.Easy,
     }
     timezone = 'Europe/Paris'
+    session_delay = 4
     new_cards_limit = 10
     new_cards_mode = 'shuffle'
     default_params = (

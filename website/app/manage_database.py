@@ -1,5 +1,5 @@
 import mysql.connector
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from app.secret import Trucs
 from app.constants import Constants
 import re
@@ -7,6 +7,7 @@ from fsrs import Rating, State
 from app.model import Carte
 import os
 import pathlib
+import pendulum
 
 
 class DB:
@@ -149,8 +150,10 @@ def create_deck(
         name: str = 'name',
         description: str = 'description',
         decks_table: str = Constants.decks_table,
-        params: str | tuple = Constants.default_params,
+        params:  str | tuple = Constants.default_params,
         retention: int = Constants.default_retention,
+        new_cards_count: int = Constants.default_new
+
 ) -> None:
     '''Crée un deck associé à un utilisateur en ajoutant une entrée dans la table decks.
     '''
@@ -160,7 +163,7 @@ def create_deck(
     created = now.strftime("%Y-%m-%d %H:%M:%S")
 
     sql = (f"""INSERT INTO {decks_table} """
-           f"""VALUES (%s,%s,%s,%s,%s,%s,%s);""")
+           f"""VALUES (%s,%s,%s,%s,%s,%s,%s,%s);""")
     db.query(sql,
              (deck_id,
               user_id,
@@ -168,35 +171,35 @@ def create_deck(
               description,
               created,
               str(params),
-              retention)
+              retention,
+              new_cards_count)
              )
+
+    init_deck(deck_id)
 
 
 def get_deck_params(
     deck_id: int,
-    user_id: int = Constants.temp_user_id,
 ) -> tuple:
     '''Renvoie les paramètres FSRS deck.
     '''
-    deck_infos, _ = get_deck_from_id(deck_id, user_id)
+    deck_infos, _ = get_deck_from_id(deck_id, show=0)
 
     return eval(deck_infos['params'])
 
 
 def get_deck_retention(
     deck_id: int,
-    user_id: int = Constants.temp_user_id,
 ) -> tuple:
     '''Renvoie les paramètres FSRS deck.
     '''
-    deck_infos, _ = get_deck_from_id(deck_id, user_id)
+    deck_infos, _ = get_deck_from_id(deck_id, show=0)
 
     return deck_infos['retention']
 
 
 def update_deck(
     deck_id: int,
-    user_id: int,
     new_values: dict,
     table: str = Constants.decks_table
 ) -> None:
@@ -209,8 +212,8 @@ def update_deck(
     for column, values in new_values.items():
         sql += f"""{column} = %s,"""
         params.append(values)
-    sql = sql[:-1] + f""" WHERE deck_id = %s AND user_id = %s;"""
-    params += [deck_id, user_id]
+    sql = sql[:-1] + f""" WHERE deck_id = %s;"""
+    params += [deck_id]
     db.query(sql, params, debug=True)
 
 
@@ -361,7 +364,9 @@ def delete_everything(
     decks_table: str = Constants.decks_table,
     card_table: str = Constants.cards_table,
     review_table: str = Constants.reviews_table,
-    srs_table: str = Constants.srs_table
+    srs_table: str = Constants.srs_table,
+    jpdb_table: str = Constants.jpdb_table,
+    session_table: str = Constants.session_table,
 ) -> None:
     '''Supprime TOUS les decks, reviews, images et cartes.
     '''
@@ -369,6 +374,8 @@ def delete_everything(
     db.query(f'DELETE FROM {card_table};')
     db.query(f'DELETE FROM {review_table};')
     db.query(f'DELETE FROM {srs_table};')
+    db.query(f'DELETE FROM {jpdb_table};')
+    db.query(f'DELETE FROM {session_table};')
 
 
 def get_card_from_card_id(
@@ -444,36 +451,34 @@ def get_cards_from_list(
 
 
 def get_decks_from_user(
-    request,
-    user_id=Constants.temp_user_id,
-    table=Constants.decks_table,
-    cards_table=Constants.cards_table,
+    user_id,
+    decks_table: str = Constants.decks_table,
+    cards_table: str = Constants.cards_table,
+    new_cards_mode: str = "shuffle",
 ) -> dict:
     '''Retourne tous les decks et ses infos d'un utilisateur.
+       Les decks ont besoin d'être initialisées !!
     '''
-    from app.reviews import get_cards_srs_to_review_from_deck_id, get_review_stats
-    cursor = db.query(f'SELECT * FROM {table} WHERE user_id = {user_id};')
+    from app.reviews import get_review_stats_from_deckid
+    cursor = db.query(
+        f'SELECT * FROM {decks_table} WHERE user_id = {user_id};'
+    )
     result = cursor.fetchall()
     decks = []
     for row in result:
         img_id, extension = get_img(row[0])
+        deck_id = row[0]
 
         sql = (f"""SELECT COUNT(front) FROM {cards_table} """
                f"""WHERE deck_id = %s;""")
         count = db.query(sql, (row[0], )).fetchall()[0][0]
 
-        deck_id = row[0]
-        if f'NEW_CARDS_COUNT{deck_id}' in request.cookies:
-            new_cards_count = int(request.cookies.get(
-                f'NEW_CARDS_COUNT{deck_id}'))
-        else:
-            new_cards_count = 0
-        due_cards_srs = get_cards_srs_to_review_from_deck_id(
+        refresh_deck_session(deck_id)
+        new_cards_remaining = get_new_cards_remaining(deck_id)
+        stats = get_review_stats_from_deckid(
             deck_id,
-            new_cards_mode=Constants.new_cards_mode,
-            new_cards_limit=Constants.new_cards_limit - new_cards_count,
+            new_cards_limit=new_cards_remaining,
         )
-        stats = get_review_stats(due_cards_srs)
 
         decks.append({
             'deck_id': deck_id,
@@ -494,7 +499,6 @@ def get_decks_from_user(
 
 def get_deck_from_id(
         deck_id: int,
-        user_id: int,
         offset: int = 0,
         show: int | str = 'all',
         search: str = '',
@@ -505,9 +509,8 @@ def get_deck_from_id(
     '''
     # 1ère requête pour vérifier si un deck existe pour un utilisateur donné
     sql = (f"""SELECT * FROM {decks_table} """
-           f"""WHERE deck_id = %s """
-           f"""AND user_id = %s;""")
-    cursor = db.query(sql, (deck_id, user_id))
+           f"""WHERE deck_id = %s;""")
+    cursor = db.query(sql, (deck_id,))
     result = cursor.fetchall()
 
     if len(result) == 0:
@@ -530,17 +533,27 @@ def get_deck_from_id(
         else:
             sql += f"{cards_table} "
 
+        # Récupère info de l'image
+        img_id, extension = get_img(deck_id)
+
+        # Récupère info des reviews
+        from app.reviews import get_review_stats_from_deckid
+        refresh_deck_session(deck_id)
+        new_cards_remaining = get_new_cards_remaining(deck_id)
+        stats = get_review_stats_from_deckid(
+            deck_id,
+            new_cards_limit=new_cards_remaining,
+        )
         # Suite de la requête
-        sql += (f"""WHERE deck_id = %s """
-                f"""AND user_id = %s;""")
-        params += [deck_id, user_id]
+        sql += (f"""WHERE deck_id = %s;""")
+        params += [deck_id]
 
         cursor = db.query(sql, params)
         result = cursor.fetchall()
         card_count = result[0][0]
 
         # garde les infos du deck dans une variable
-        deckInfos = {
+        deck_infos = {
             'deck_id': firstRow[0],
             'name': firstRow[2],
             'description': firstRow[3],
@@ -548,8 +561,13 @@ def get_deck_from_id(
             'params': firstRow[5],
             'retention': firstRow[6],
             'card_count': card_count,
+            'new_cards_count': firstRow[7],
+            'img_id': img_id,
+            'extension': extension,
+            'new': stats['new'],
+            'review': stats['review'],
         }
-        # 2ème requête pour obtenir toutes les cartes de ce deck, 
+        # 2ème requête pour obtenir toutes les cartes de ce deck,
         # met les les cartes dans une liste cards
         sql = "SELECT * FROM "
         params = []
@@ -564,16 +582,15 @@ def get_deck_from_id(
             sql += f"{cards_table} "
 
         # Suite de la requête
-        sql += (f"""WHERE deck_id = %s """
-                f"""AND user_id = %s """)
-        params += [deck_id, user_id]
+        sql += (f"""WHERE deck_id = %s """)
+        params += [deck_id]
 
         # Filtre affichage:
         if show != 'all':
             sql += f"""LIMIT %s, %s;"""
             params += [offset, show]
 
-        cursor = db.query(sql, params)
+        cursor = db.query(sql, params, debug=True)
 
         result = cursor.fetchall()
         cards = []
@@ -590,16 +607,15 @@ def get_deck_from_id(
                 'created': row[9]
             })
 
-        return (deckInfos, cards)
+        return (deck_infos, cards)
 
 
 def get_card_ids_from_deck_id(
         deck_id: int,
-        user_id: int = Constants.temp_user_id,
 ) -> list[int]:
     '''Retourne tous les identifiants des cartes associées à un deck.
     '''
-    deckInfos, cards = get_deck_from_id(deck_id, user_id)
+    _, cards = get_deck_from_id(deck_id)
     card_ids = []
     for card in cards:
         card_ids.append(card['card_id'])
@@ -657,7 +673,6 @@ def add_review_entries(
 def update_card_srs_from_dict(
         card_id: int,
         variables: dict,
-        user_id: int = Constants.temp_user_id,
         srs_table: str = Constants.srs_table,
 ) -> None:
     '''Met à jour l'état d'une carte donnée à partir d'un dico de variables.
@@ -674,8 +689,7 @@ def update_card_srs_from_dict(
         """lapses = %s,"""
         """state = %s,"""
         """last_review = %s """
-        """WHERE card_id = %s """
-        """AND user_id = %s;""",
+        """WHERE card_id = %s;""",
         (variables['due'],
          variables['stability'],
          variables['difficulty'],
@@ -685,15 +699,12 @@ def update_card_srs_from_dict(
          variables['lapses'],
          variables['state'],
          variables['last_review'],
-         card_id,
-         user_id,
-         )
+         card_id)
     )
 
 
 def bulk_update_cards_srs(
     cards_variables: dict,
-    user_id: int = Constants.temp_user_id,
     srs_table: str = Constants.srs_table,
 ) -> None:
     '''Met à jour l'état de plusieurs cartes à partir d'un dico de variables.
@@ -725,42 +736,9 @@ def bulk_update_cards_srs(
             inn += f'{card_id},'
             sql += f"""WHEN {card_id} THEN %s """
             params.append(variables[column])
-        sql += (f"""ELSE {column} END WHERE card_id IN({inn[:-1]}) """
-                f"""AND user_id = {user_id}""")
+        sql += (f"""ELSE {column} END WHERE card_id IN({inn[:-1]}) """)
 
         db.query(sql, params)
-
-    # sql = (
-    #     f"""UPDATE {srs_table} SET """
-    #     """due = %s,"""
-    #     """stability = %s,"""
-    #     """difficulty = %s,"""
-    #     """elapsed_days = %s,"""
-    #     """scheduled_days = %s,"""
-    #     """reps = %s,"""
-    #     """lapses = %s,"""
-    #     """state = %s,"""
-    #     """last_review = %s """
-    #     """WHERE card_id = %s """
-    #     """AND user_id = %s;"""
-    # )
-    # params = []
-    # for card_id, variables in cards_variables.items():
-    #     params += [(
-    #         variables['due'],
-    #         variables['stability'],
-    #         variables['difficulty'],
-    #         variables['elapsed_days'],
-    #         variables['scheduled_days'],
-    #         variables['reps'],
-    #         variables['lapses'],
-    #         variables['state'],
-    #         variables['last_review'],
-    #         card_id,
-    #         user_id,
-    #     )]
-
-    # db.query(sql, params, many=True)
 
 
 def insert_card_srs(
@@ -796,18 +774,14 @@ def insert_card_srs(
 
 def get_card_variables(
     card_id: int,
-    user_id: int = Constants.temp_user_id,
     srs_table: str = Constants.srs_table,
 ) -> dict:
     '''Retourne les variables d'une carte donnée à partir de la table srs.
     '''
     cursor = db.query(
         f"""SELECT * FROM {srs_table} """
-        """WHERE card_id = %s """
-        """AND user_id = %s;""",
-        (card_id,
-         user_id,
-         )
+        """WHERE card_id = %s """,
+        (card_id,)
     )
     result = cursor.fetchall()
     row = result[0]
@@ -933,16 +907,14 @@ def get_reviews_from_list(
 
 def get_cards_srs_from_deck_id(
     deck_id: int,
-    user_id: int = Constants.temp_user_id,
     table=Constants.srs_table
 ) -> dict:
     '''Retourne un dictionnaire contenant les informations srs des cartes d'un deck donné.
     '''
     cards_srs = []
     cursor = db.query(f"""SELECT * FROM {table} """
-                      """WHERE deck_id = %s """
-                      """AND user_id = %s;""",
-                      (deck_id, user_id))
+                      """WHERE deck_id = %s """,
+                      (deck_id,))
     result = cursor.fetchall()
     for card in result:
         card_dict = {
@@ -1056,6 +1028,104 @@ def test_login(
         return None
     else:
         return str(result[0][0])
+
+
+def init_deck(
+    deck_id: int,
+    timezone: str = Constants.timezone,
+    delay: int = Constants.session_delay,
+    session_table: str = Constants.session_table,
+    decks_table: str = Constants.decks_table,
+) -> None:
+    '''Ajoute le deck d'un utilisateur dans la table session.
+       Le délai spécifie l'heure d'expiration de la sesion le
+       jour suivant.
+    '''
+    new_cards_count = db.query(
+        f"""SELECT new_cards_count FROM {decks_table} """
+        "WHERE deck_id = %s", (deck_id,)).fetchall()[0][0]
+    date = pendulum.now(timezone)
+    expires = pendulum.tomorrow(timezone).add(hours=delay)
+    db.query(f"""INSERT INTO {session_table} VALUES """
+             "(%s,%s,%s,%s)",
+             (
+                 deck_id,
+                 new_cards_count,
+                 timezone,
+                 expires,
+    ),
+    )
+
+
+def session_expired(
+    deck_id: int,
+    table: str = Constants.session_table,
+) -> bool:
+    '''Retourne si la session d'un deck a expiré.
+    '''
+    cursor = db.query(f"""SELECT expires, timezone FROM {table} """
+                      f"""WHERE deck_id = %s;""",
+                      (deck_id,))
+    result = cursor.fetchall()
+    assert len(result) != 0, "Le deck n'a pas été initialisé."
+    session = result[0]
+    timezone = session[1]
+    date = pendulum.now(timezone)
+    dt = session[0]
+    expires = pendulum.instance(dt, timezone)
+    delta = date.diff(expires).in_seconds()
+    if delta <= 0:
+        return True
+    return False
+
+
+def refresh_deck_session(
+    deck_id: int,
+    table: str = Constants.session_table,
+    force: bool = False,
+) -> None:
+    '''Actualise la session d'un deck.
+    '''
+    if session_expired(deck_id) or force == True:
+        deck_info, _ = get_deck_from_id(deck_id, show=0)
+        new_cards_count = deck_info['new_cards_count']
+        db.query(
+            f"UPDATE {table} SET new_cards_remaining = {new_cards_count} "
+            "WHERE deck_id = %s",
+            (deck_id,)
+        )
+
+
+def get_new_cards_remaining(
+    deck_id: int,
+    table: str = Constants.session_table,
+) -> int | None:
+    '''Retourne le nombre de nouvelles cartes à voir d'un utilisateur.
+    '''
+    cursor = db.query(f"""SELECT new_cards_remaining FROM {table} """
+                      f"""WHERE deck_id = %s;""",
+                      (deck_id,))
+    f_row = cursor.fetchall()[0]
+    if len(f_row) == 0:
+        return None
+    new_cards_remaining = f_row[0]
+
+    return new_cards_remaining
+
+
+def decrease_new_cards_remaining(
+    deck_id: int,
+    number: int = 1,
+    table: str = Constants.session_table,
+) -> None:
+    '''Change le nombre de cartes restantes pour un deck et utilisateur donné.
+    '''
+    db.query(
+        f"""UPDATE {table}
+            SET new_cards_remaining = new_cards_remaining - %s """
+        f"WHERE deck_id = %s;",
+        (number, deck_id)
+    )
 
 
 def add_login(
