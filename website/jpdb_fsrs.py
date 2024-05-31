@@ -160,7 +160,7 @@ def jpdb_import(
         )
     else:
         # Si deck déjà existant, fais la liste de tous les mots déjà présents
-        _, cards = get_deck_from_id(deck_id, user_id)
+        _, cards = get_deck_from_id(deck_id)
         for card in cards:
             processed_words.append(card['front'])
 
@@ -212,7 +212,7 @@ def jpdb_import(
             if from_db:
                 if vid in db_cards:
                     card = db_cards[vid]
-                    print(f'Mot {card['word']} ajouté de la table')
+                    print(f"Mot {card['word']} ajouté de la table")
                     wait = False
 
             # Si pas trouvé dans la table et card de tatoeba
@@ -261,7 +261,7 @@ def jpdb_import(
                 'front_sub': card['jp_sentence'],
                 'back': f"{card['reading']} - {f_meaning}",
                 'back_sub': card['en_sentence'],
-                'back_sub2': f'Pitch Accent: {card['pitchaccent']}',
+                'back_sub2': f"Pitch Accent: {card['pitchaccent']}",
                 'tag': 'jpdb',
             }
             cards.append(open_card)
