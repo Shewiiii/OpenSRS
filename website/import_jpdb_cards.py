@@ -184,13 +184,13 @@ def import_deck(
             # Requête vers la table jpdb:
             card = get_card_from_db(word['vid'], word['word'])
             if card != {}:
-                print(f'Mot {card['word']} ajouté de la table')
+                print(f"Mot {card['word']} ajouté de la table")
 
 
             if card == {} or not from_db:
                 if deep_import:
                     url = ('https://jpdb.io/vocabulary/'
-                          f'{word['vid']}/{word['word']}')
+                          f"{word['vid']}/{word['word']}")
 
                     raw = request(url, cookie)
                     example = raw.find(
@@ -268,7 +268,7 @@ def import_deck(
                 front_sub=card['jp_sentence'],
                 back=f"{card['reading']} - {f_meaning}",
                 back_sub=card['en_sentence'],
-                back_sub2=f'Pitch Accent: {card['pitchaccent']}',
+                back_sub2=f"Pitch Accent: {card['pitchaccent']}",
                 tag='jpdb',
 
             )
