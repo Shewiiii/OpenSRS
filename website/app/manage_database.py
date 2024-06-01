@@ -86,8 +86,8 @@ def remove_ghost_reviews(
         card_id = row[0]
         if card_id not in ids:
             db.query(
-                f"""DELETE FROM {reviews_table} """
-                """WHERE card_id = %s;""",
+                f"DELETE FROM {reviews_table} "
+                "WHERE card_id = %s;",
                 (card_id, )
             )
 
@@ -111,7 +111,7 @@ def add_image(
         except:
             print('Erreur, image corrompue.')
 
-    sql = f"""INSERT INTO {table} VALUES (%s,%s,%s);"""
+    sql = f"INSERT INTO {table} VALUES (%s,%s,%s);"
     db.query(sql, (img_id, deck_id, extension))
 
     return img_id
@@ -125,7 +125,7 @@ def delete_image(deck_id: int) -> None:
         path = (pathlib.Path(__file__).parents[1] / 'static/img/uploads'
                 / f'{img_id}{extension}')
         os.remove(path)
-        db.query("""DELETE FROM images WHERE deck_id = %s;""", (deck_id, ))
+        db.query("DELETE FROM images WHERE deck_id = %s;", (deck_id, ))
 
 
 def get_img(
@@ -134,8 +134,8 @@ def get_img(
 ) -> tuple[int, str] | None:
     '''Retourne un tuple contenant l'id de l'image dans la table image, et son extension.
     '''
-    sql = (f"""SELECT img_id, extension """
-           f"""FROM {table} WHERE deck_id = %s;""")
+    sql = (f"SELECT img_id, extension "
+           f"FROM {table} WHERE deck_id = %s;")
     cursor = db.query(sql, (deck_id, ))
     result = cursor.fetchall()
 
@@ -164,8 +164,8 @@ def create_deck(
     now = datetime.now()
     created = now.strftime("%Y-%m-%d %H:%M:%S")
 
-    sql = (f"""INSERT INTO {decks_table} """
-           f"""VALUES (%s,%s,%s,%s,%s,%s,%s,%s);""")
+    sql = (f"INSERT INTO {decks_table} "
+           f"VALUES (%s,%s,%s,%s,%s,%s,%s,%s);")
     db.query(sql,
              (deck_id,
               user_id,
@@ -210,11 +210,11 @@ def update_deck(
     params = []
     new_values['params'] = str(new_values['params'])
 
-    sql = f"""UPDATE {table} SET """
+    sql = f"UPDATE {table} SET "
     for column, values in new_values.items():
-        sql += f"""{column} = %s,"""
+        sql += f"{column} = %s,"
         params.append(values)
-    sql = sql[:-1] + f""" WHERE deck_id = %s;"""
+    sql = sql[:-1] + f" WHERE deck_id = %s;"
     params += [deck_id]
     db.query(sql, params, debug=True)
 
@@ -228,13 +228,13 @@ def delete_deck(
 ) -> None:
     '''Supprime un deck, son image et toutes ses cartes associées.
     '''
-    db.query(f"""DELETE FROM {deck_table} WHERE deck_id = %s;""",
+    db.query(f"DELETE FROM {deck_table} WHERE deck_id = %s;",
              (deck_id, ))
-    db.query(f"""DELETE FROM {card_table} WHERE deck_id = %s;""",
+    db.query(f"DELETE FROM {card_table} WHERE deck_id = %s;",
              (deck_id, ))
-    db.query(f"""DELETE FROM {reviews_table} WHERE deck_id = %s;""",
+    db.query(f"DELETE FROM {reviews_table} WHERE deck_id = %s;",
              (deck_id, ))
-    db.query(f"""DELETE FROM {srs_table} WHERE deck_id = %s;""",
+    db.query(f"DELETE FROM {srs_table} WHERE deck_id = %s;",
              (deck_id, ))
     delete_image(deck_id)
 
@@ -258,8 +258,8 @@ def create_card(
         card_id = get_free_id()
     now = datetime.now(timezone.utc)
     created = now.strftime("%Y-%m-%d %H:%M:%S")
-    sql = f"""INSERT INTO {cards_table} VALUES (
-           %s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
+    sql = (f"INSERT INTO {cards_table} VALUES ("
+           "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)")
     db.query(sql, (
         card_id,
         user_id,
@@ -291,20 +291,20 @@ def create_cards(
     card_count = len(cards)
     f_id = get_free_id()
     ids = [i for i in range(f_id, f_id+card_count)]
-    sql = f"""INSERT INTO {cards_table} VALUES """
+    sql = f"INSERT INTO {cards_table} VALUES "
     params = []
 
     # Cartes FSRS
     card = Carte()
     p = card.card.to_dict()
     srs_params = []
-    srsql = (f"""INSERT INTO {srs_table} VALUES """
+    srsql = (f"INSERT INTO {srs_table} VALUES "
              + "(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,NULL),"*card_count)[:-1]
 
     for i in range(card_count):
         now = datetime.now(timezone.utc)
         created = now.strftime("%Y-%m-%d %H:%M:%S")
-        sql += f"""(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s),"""
+        sql += f"(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s),"
         params += [
             ids[i],
             user_id,
@@ -346,12 +346,12 @@ def delete_card(
 ) -> None:
     '''Supprime toutes les cartes d'un deck donné.
     '''
-    db.query(f"""DELETE FROM {card_table}
-             WHERE card_id = %s;""", (card_id, ))
-    db.query(f"""DELETE FROM {review_table}
-             WHERE card_id = %s;""", (card_id, ))
-    db.query(f"""DELETE FROM {srs_table}
-             WHERE card_id = %s;""", (card_id, ))
+    db.query(f"DELETE FROM {card_table}"
+             "WHERE card_id = %s;", (card_id, ))
+    db.query(f"DELETE FROM {review_table}"
+             "WHERE card_id = %s;", (card_id, ))
+    db.query(f"DELETE FROM {srs_table}"
+             "WHERE card_id = %s;", (card_id, ))
 
 
 def delete_all_cards(table: str = Constants.cards_table) -> None:
@@ -387,8 +387,8 @@ def get_card_from_card_id(
     '''Retourne les informations d'une carte sous forme d'un dictionnaire 
         à partir de son id.
     '''
-    cursor = db.query(f"""SELECT * FROM {table} """
-                      f"""WHERE card_id = %s;""",
+    cursor = db.query(f"SELECT * FROM {table} "
+                      f"WHERE card_id = %s;",
                       (card_id, ))
     result = cursor.fetchall()
     if len(result) == 0:
@@ -420,11 +420,11 @@ def get_cards_from_list(
         à partir d'une liste d'ids.
     '''
     params = [deck_id]
-    sql = (f"""SELECT * FROM {table} """
-           """WHERE deck_id = %s AND """)
+    sql = (f"SELECT * FROM {table} "
+           "WHERE deck_id = %s AND ")
     for card_id in card_ids:
         params.append(card_id)
-        sql += """card_id = %s OR """
+        sql += "card_id = %s OR "
 
     sql = sql[:-3] + ';'
     cursor = db.query(sql, params)
@@ -471,8 +471,8 @@ def get_decks_from_user(
         img_id, extension = get_img(row[0])
         deck_id = row[0]
 
-        sql = (f"""SELECT COUNT(front) FROM {cards_table} """
-               f"""WHERE deck_id = %s;""")
+        sql = (f"SELECT COUNT(front) FROM {cards_table} "
+               f"WHERE deck_id = %s;")
         count = db.query(sql, (row[0], )).fetchall()[0][0]
 
         refresh_deck_session(deck_id)
@@ -511,8 +511,8 @@ def get_deck_from_id(
     '''Retourne à partir de son id les informations d'un deck et ses cartes.
     '''
     # 1ère requête pour vérifier si un deck existe pour un utilisateur donné
-    sql = (f"""SELECT * FROM {decks_table} """
-           f"""WHERE deck_id = %s;""")
+    sql = (f"SELECT * FROM {decks_table} "
+           f"WHERE deck_id = %s;")
     cursor = db.query(sql, (deck_id,))
     result = cursor.fetchall()
 
@@ -548,7 +548,7 @@ def get_deck_from_id(
             new_cards_limit=new_cards_remaining,
         )
         # Suite de la requête
-        sql += (f"""WHERE deck_id = %s;""")
+        sql += (f"WHERE deck_id = %s;")
         params += [deck_id]
 
         cursor = db.query(sql, params)
@@ -585,12 +585,12 @@ def get_deck_from_id(
             sql += f"{cards_table} "
 
         # Suite de la requête
-        sql += (f"""WHERE deck_id = %s """)
+        sql += (f"WHERE deck_id = %s ")
         params += [deck_id]
 
         # Filtre affichage:
         if show != 'all':
-            sql += f"""LIMIT %s, %s;"""
+            sql += f"LIMIT %s, %s;"
             params += [offset, show]
 
         cursor = db.query(sql, params, debug=True)
@@ -642,8 +642,8 @@ def add_review_entry(
         now = datetime.now(timezone.utc)
         timestamp = int(datetime.timestamp(now)*1000)
 
-    sql = (f"""INSERT INTO {table} VALUES """
-           f"""(%s,%s,%s,%s,%s,%s);""")
+    sql = (f"INSERT INTO {table} VALUES "
+           f"(%s,%s,%s,%s,%s,%s);")
     db.query(sql, (card_id, deck_id, user_id, rating, timestamp, state))
 
 
@@ -656,10 +656,10 @@ def add_review_entries(
        suivantes: 
        'card_id', 'deck_id', 'user_id', 'rating', 'timestamp', 'state'.
     '''
-    sql = f"""INSERT INTO {table} VALUES """
+    sql = f"INSERT INTO {table} VALUES "
     params = []
     for review in reviews:
-        sql += """(%s, %s, %s, %s, %s, %s),"""
+        sql += "(%s, %s, %s, %s, %s, %s),"
         params += [
             review['card_id'],
             review['deck_id'],
@@ -682,17 +682,17 @@ def update_card_srs_from_dict(
     '''
     assert 'last_review' in variables, 'Erreur: last_review manquant.'
     db.query(
-        f"""UPDATE {srs_table} SET """
-        """due = %s,"""
-        """stability = %s,"""
-        """difficulty = %s,"""
-        """elapsed_days = %s,"""
-        """scheduled_days = %s,"""
-        """reps = %s,"""
-        """lapses = %s,"""
-        """state = %s,"""
-        """last_review = %s """
-        """WHERE card_id = %s;""",
+        f"UPDATE {srs_table} SET "
+        "due = %s,"
+        "stability = %s,"
+        "difficulty = %s,"
+        "elapsed_days = %s,"
+        "scheduled_days = %s,"
+        "reps = %s,"
+        "lapses = %s,"
+        "state = %s,"
+        "last_review = %s "
+        "WHERE card_id = %s;",
         (variables['due'],
          variables['stability'],
          variables['difficulty'],
@@ -732,14 +732,14 @@ def bulk_update_cards_srs(
     # Alors c'est bizzare mais c'est pour minimiser les requêtes
     # Toujours 9 requêtes, au lieu du nombre de cartes O(n)
     for column in columns:
-        sql = f"""UPDATE {srs_table} SET {column} = CASE card_id """
+        sql = f"UPDATE {srs_table} SET {column} = CASE card_id "
         inn = ''
         params = []
         for card_id, variables in cards_variables.items():
             inn += f'{card_id},'
-            sql += f"""WHEN {card_id} THEN %s """
+            sql += f"WHEN {card_id} THEN %s "
             params.append(variables[column])
-        sql += (f"""ELSE {column} END WHERE card_id IN({inn[:-1]}) """)
+        sql += (f"ELSE {column} END WHERE card_id IN({inn[:-1]}) ")
 
         db.query(sql, params)
 
@@ -757,9 +757,9 @@ def insert_card_srs(
     p = card.card.to_dict()
 
     db.query(
-        f"""INSERT INTO {srs_table} VALUES ("""
-        """%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,"""
-        """NULL);""",
+        f"INSERT INTO {srs_table} VALUES ("
+        "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,"
+        "NULL);",
         (card_id,
          deck_id,
          user_id,
@@ -782,8 +782,8 @@ def get_card_variables(
     '''Retourne les variables d'une carte donnée à partir de la table srs.
     '''
     cursor = db.query(
-        f"""SELECT * FROM {srs_table} """
-        """WHERE card_id = %s """,
+        f"SELECT * FROM {srs_table} "
+        "WHERE card_id = %s ",
         (card_id,)
     )
     result = cursor.fetchall()
@@ -815,11 +815,11 @@ def forget_card(
     card = get_card_from_card_id(card_id)
     deck_id, user_id = card['deck_id'], card['user_id']
 
-    db.query(f"""DELETE FROM {reviews_table} """
-             """WHERE card_id = %s;""",
+    db.query(f"DELETE FROM {reviews_table} "
+             "WHERE card_id = %s;",
              (card_id, ))
-    db.query(f"""DELETE FROM {srs_table} """
-             """WHERE card_id = %s;""",
+    db.query(f"DELETE FROM {srs_table} "
+             "WHERE card_id = %s;",
              (card_id, ))
     insert_card_srs(card_id, deck_id, user_id, srs_table=srs_table)
 
@@ -832,7 +832,7 @@ def get_ratings_from_card_id(
     '''Retourne les Rating d'une carte donnée, sous forme de strings ou non. 
     '''
     cursor = db.query(
-        f"SELECT * FROM {table} WHERE card_id = %s;""",
+        f"SELECT * FROM {table} WHERE card_id = %s;",
         (card_id, )
     )
     result = cursor.fetchall()
@@ -861,7 +861,7 @@ def get_reviews_from_deck_id(
     '''
     # l'utilisation d'un dico rend la fonction bien plus intuitive à utiliser
     # et la rend future proof
-    cursor = db.query(f"""SELECT * FROM {table} WHERE deck_id = %s;""",
+    cursor = db.query(f"SELECT * FROM {table} WHERE deck_id = %s;",
                       (deck_id, ))
     result = cursor.fetchall()
     reviews = []
@@ -885,11 +885,11 @@ def get_reviews_from_list(
     '''Retourne les reviews des cartes données dans une liste.
     '''
     params = [deck_id]
-    sql = (f"""SELECT * FROM {table} """
-           """WHERE deck_id = %s AND """)
+    sql = (f"SELECT * FROM {table} "
+           "WHERE deck_id = %s AND ")
     for card_id in card_ids:
         params.append(card_id)
-        sql += """card_id = %s OR """
+        sql += "card_id = %s OR "
 
     sql = sql[:-3] + ';'
     cursor = db.query(sql, params)
@@ -915,8 +915,8 @@ def get_cards_srs_from_deck_id(
     '''Retourne un dictionnaire contenant les informations srs des cartes d'un deck donné.
     '''
     cards_srs = []
-    cursor = db.query(f"""SELECT * FROM {table} """
-                      """WHERE deck_id = %s """,
+    cursor = db.query(f"SELECT * FROM {table} "
+                      "WHERE deck_id = %s ",
                       (deck_id,))
     result = cursor.fetchall()
     for card in result:
@@ -954,8 +954,8 @@ def add_jpdb_entry(
 ) -> None:
     '''Ajoute un mot et ses informations de jpdb dans la table jpdb.
     '''
-    db.query(f"""INSERT INTO {table} VALUES """
-             """(%s, %s, %s, %s, %s, %s, %s)""",
+    db.query(f"INSERT INTO {table} VALUES "
+             "(%s, %s, %s, %s, %s, %s, %s)",
              (vid, word, reading, meaning, jp_sentence, en_sentence, pitchaccent))
 
 
@@ -968,10 +968,10 @@ def add_jpdb_entries(
        'vid', 'word', 'reading', 'meaning',
        'jp_sentence', 'en_sentence', 'pitch_accent'.
     '''
-    sql = f"""INSERT INTO {table} VALUES """
+    sql = f"INSERT INTO {table} VALUES "
     params = []
     for entry in entries:
-        sql += """(%s, %s, %s, %s, %s, %s, %s),"""
+        sql += "(%s, %s, %s, %s, %s, %s, %s),"
         params += [
             entry['vid'],
             entry['word'],
@@ -990,7 +990,7 @@ def get_jpdb_data(table: str = Constants.jpdb_table) -> list:
     '''Récupère toute les données de la table jpdb.
     '''
     data = []
-    cursor = db.query(f"""SELECT * FROM {table}""")
+    cursor = db.query(f"SELECT * FROM {table}")
     result = cursor.fetchall()
     for row in result:
         data.append({
@@ -1021,8 +1021,8 @@ def test_login(
         renvoie l'user_id sous forme de string si ces derniers sont valides. 
     '''
     cursor = db.query(
-        f"""SELECT * FROM {table} """
-        """WHERE username = %s AND password = %s;""",
+        f"SELECT * FROM {table} "
+        "WHERE username = %s AND password = %s;",
         (username, password)
     )
     result = cursor.fetchall()
@@ -1045,11 +1045,11 @@ def init_deck(
        jour suivant.
     '''
     new_cards_count = db.query(
-        f"""SELECT new_cards_count FROM {decks_table} """
+        f"SELECT new_cards_count FROM {decks_table} "
         "WHERE deck_id = %s", (deck_id,)).fetchall()[0][0]
     date = pendulum.now(timezone)
     expires = pendulum.tomorrow(timezone).add(hours=delay)
-    db.query(f"""INSERT INTO {deck_session_table} VALUES """
+    db.query(f"INSERT INTO {deck_session_table} VALUES "
              "(%s,%s,%s,%s)",
              (
                  deck_id,
@@ -1066,8 +1066,8 @@ def session_expired(
 ) -> bool:
     '''Retourne si la session d'un deck a expiré.
     '''
-    cursor = db.query(f"""SELECT expires, timezone FROM {table} """
-                      f"""WHERE deck_id = %s;""",
+    cursor = db.query(f"SELECT expires, timezone FROM {table} "
+                      f"WHERE deck_id = %s;",
                       (deck_id,))
     result = cursor.fetchall()
     assert len(result) != 0, "Le deck n'a pas été initialisé."
@@ -1099,14 +1099,21 @@ def refresh_deck_session(
         )
 
 
+def end_session(
+    deck_id: int,
+    table: str = Constants.deck_session_table,
+) -> None:
+    db.query(f"DELETE FROM {table} WHERE deck_id = %", (deck_id,))
+
+
 def get_new_cards_remaining(
     deck_id: int,
     table: str = Constants.deck_session_table,
 ) -> int | None:
     '''Retourne le nombre de nouvelles cartes à voir d'un utilisateur.
     '''
-    cursor = db.query(f"""SELECT new_cards_remaining FROM {table} """
-                      f"""WHERE deck_id = %s;""",
+    cursor = db.query(f"SELECT new_cards_remaining FROM {table} "
+                      f"WHERE deck_id = %s;",
                       (deck_id,))
     f_row = cursor.fetchall()[0]
     if len(f_row) == 0:
@@ -1124,9 +1131,9 @@ def decrease_new_cards_remaining(
     '''Change le nombre de cartes restantes pour un deck et utilisateur donné.
     '''
     db.query(
-        f"""UPDATE {table}
-            SET new_cards_remaining = new_cards_remaining - %s """
-        f"WHERE deck_id = %s;",
+        f"UPDATE {table}"
+        "SET new_cards_remaining = new_cards_remaining - %s "
+        "WHERE deck_id = %s;",
         (number, deck_id)
     )
 
@@ -1141,8 +1148,8 @@ def add_login(
     '''
     created = datetime.now()
     user_id = get_free_id(table=table)
-    sql = (f"""INSERT INTO {table} """
-           f"""VALUES (%s,%s,%s,%s,%s);""")
+    sql = (f"INSERT INTO {table} "
+           f"VALUES (%s,%s,%s,%s,%s);")
     db.query(sql, (
         user_id,
         username,
@@ -1168,7 +1175,7 @@ def init_user(
         sid += chr(r)
 
     expires = pendulum.now().add(days=days)
-    db.query(f"""INSERT INTO {table} VALUES """
+    db.query(f"INSERT INTO {table} VALUES "
              "(%s,%s,%s)", (user_id, sid, expires))
 
     return sid
@@ -1182,7 +1189,7 @@ def update_users(
     '''
     while True:
         print('checking sessions..')
-        cursor = db.query(f"""SELECT user_id,expires FROM {table}""")
+        cursor = db.query(f"SELECT user_id,expires FROM {table}")
         result = cursor.fetchall()
         for session in result:
             uid = session[0]
@@ -1193,7 +1200,7 @@ def update_users(
             delta = now.diff(expires).in_seconds()
 
             if delta <= 0:
-                db.query(f"""DELETE FROM {table}"""
+                db.query(f"DELETE FROM {table}"
                          "WHERE user_id = %s;", (uid,))
                 print(f'session {uid} expired')
 
@@ -1207,7 +1214,7 @@ def get_user_id(
     '''Retourne un user_id à partir d'un SID.
     '''
     cursor = db.query(
-        f"""SELECT user_id FROM {table} WHERE sid = %s""",
+        f"SELECT user_id FROM {table} WHERE sid = %s",
         (sid,)
     )
     result = cursor.fetchall()
