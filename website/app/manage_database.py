@@ -8,6 +8,8 @@ from app.model import Carte
 import os
 import pathlib
 import pendulum
+from random import randint, choice
+from time import sleep
 
 
 class DB:
@@ -366,7 +368,7 @@ def delete_everything(
     review_table: str = Constants.reviews_table,
     srs_table: str = Constants.srs_table,
     jpdb_table: str = Constants.jpdb_table,
-    session_table: str = Constants.session_table,
+    deck_session_table: str = Constants.deck_session_table,
 ) -> None:
     '''Supprime TOUS les decks, reviews, images et cartes.
     '''
@@ -375,7 +377,7 @@ def delete_everything(
     db.query(f'DELETE FROM {review_table};')
     db.query(f'DELETE FROM {srs_table};')
     db.query(f'DELETE FROM {jpdb_table};')
-    db.query(f'DELETE FROM {session_table};')
+    db.query(f'DELETE FROM {deck_session_table};')
 
 
 def get_card_from_card_id(
@@ -477,6 +479,7 @@ def get_decks_from_user(
         new_cards_remaining = get_new_cards_remaining(deck_id)
         stats = get_review_stats_from_deckid(
             deck_id,
+            new_cards_mode=new_cards_mode,
             new_cards_limit=new_cards_remaining,
         )
 
@@ -1034,7 +1037,7 @@ def init_deck(
     deck_id: int,
     timezone: str = Constants.timezone,
     delay: int = Constants.session_delay,
-    session_table: str = Constants.session_table,
+    deck_session_table: str = Constants.deck_session_table,
     decks_table: str = Constants.decks_table,
 ) -> None:
     '''Ajoute le deck d'un utilisateur dans la table session.
@@ -1046,7 +1049,7 @@ def init_deck(
         "WHERE deck_id = %s", (deck_id,)).fetchall()[0][0]
     date = pendulum.now(timezone)
     expires = pendulum.tomorrow(timezone).add(hours=delay)
-    db.query(f"""INSERT INTO {session_table} VALUES """
+    db.query(f"""INSERT INTO {deck_session_table} VALUES """
              "(%s,%s,%s,%s)",
              (
                  deck_id,
@@ -1059,7 +1062,7 @@ def init_deck(
 
 def session_expired(
     deck_id: int,
-    table: str = Constants.session_table,
+    table: str = Constants.deck_session_table,
 ) -> bool:
     '''Retourne si la session d'un deck a expiré.
     '''
@@ -1081,7 +1084,7 @@ def session_expired(
 
 def refresh_deck_session(
     deck_id: int,
-    table: str = Constants.session_table,
+    table: str = Constants.deck_session_table,
     force: bool = False,
 ) -> None:
     '''Actualise la session d'un deck.
@@ -1098,7 +1101,7 @@ def refresh_deck_session(
 
 def get_new_cards_remaining(
     deck_id: int,
-    table: str = Constants.session_table,
+    table: str = Constants.deck_session_table,
 ) -> int | None:
     '''Retourne le nombre de nouvelles cartes à voir d'un utilisateur.
     '''
@@ -1116,7 +1119,7 @@ def get_new_cards_remaining(
 def decrease_new_cards_remaining(
     deck_id: int,
     number: int = 1,
-    table: str = Constants.session_table,
+    table: str = Constants.deck_session_table,
 ) -> None:
     '''Change le nombre de cartes restantes pour un deck et utilisateur donné.
     '''
@@ -1149,3 +1152,67 @@ def add_login(
     )
     )
     return user_id
+
+
+def init_user(
+    user_id: int,
+    days: int = 30,
+    table: str = Constants.user_session_table,
+) -> str:
+    '''Ajoute une session pour un utilisateur.
+       Retourne le sid de ce dernier.
+    '''
+    sid = ''
+    for i in range(20):
+        r = choice([randint(48, 57), randint(65, 90), randint(97, 122)])
+        sid += chr(r)
+
+    expires = pendulum.now().add(days=days)
+    db.query(f"""INSERT INTO {table} VALUES """
+             "(%s,%s,%s)", (user_id, sid, expires))
+
+    return sid
+
+
+def update_users(
+    table: str = Constants.user_session_table,
+    cooldown: int = 30,
+) -> None:
+    '''Vérifie que les sessions actives sont toujours valides.
+    '''
+    while True:
+        print('checking sessions..')
+        cursor = db.query(f"""SELECT user_id,expires FROM {table}""")
+        result = cursor.fetchall()
+        for session in result:
+            uid = session[0]
+
+            now = pendulum.now()
+            dt = session[1]
+            expires = pendulum.instance(dt)
+            delta = now.diff(expires).in_seconds()
+
+            if delta <= 0:
+                db.query(f"""DELETE FROM {table}"""
+                         "WHERE user_id = %s;", (uid,))
+                print(f'session {uid} expired')
+
+        sleep(cooldown)
+
+
+def get_user_id(
+    sid: str,
+    table: str = Constants.user_session_table
+) -> int | None:
+    '''Retourne un user_id à partir d'un SID.
+    '''
+    cursor = db.query(
+        f"""SELECT user_id FROM {table} WHERE sid = %s""",
+        (sid,)
+    )
+    result = cursor.fetchall()
+    if len(result) == 0:
+        return None
+    else:
+        sid = result[0][0]
+        return sid

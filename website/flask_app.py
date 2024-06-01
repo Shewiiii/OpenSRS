@@ -8,11 +8,14 @@ from app.reviews import *
 from datetime import datetime, timedelta
 import pathlib
 import os
+from threading import Thread
 
 
 app = Flask(__name__)
 app.config.from_object(Config)
 
+t = Thread(target=update_users)
+t.start()
 
 @app.route('/')
 def index():
@@ -319,12 +322,15 @@ def login():
         hash = hashlib.sha1(hash.encode()) # encode le password
         password = hash.hexdigest()"""
 
-        testLogin = test_login(username, password)
+        user_id = test_login(username, password)
         # None si connection échouée, user_id sinon
 
-        if testLogin != None:
+        if user_id != None:
+            # Générer un SID
+            sid = init_user(user_id)
+            
             response = make_response(redirect('/decklist'))
-            response.set_cookie('USER_id', testLogin,
+            response.set_cookie('SID', sid,
                                 expires=datetime.now() + timedelta(days=30))
             response.set_cookie('CONNECTED', 'True',
                                 expires=datetime.now() + timedelta(days=30))

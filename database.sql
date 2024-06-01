@@ -5,7 +5,8 @@ DROP TABLE reviews;
 DROP TABLE images;
 DROP TABLE srs;
 DROP TABLE jpdb;
-DROP TABLE session;
+DROP TABLE deck_session;
+DROP TABLE user_session;
 CREATE TABLE users (
     user_id INT NOT NULL PRIMARY KEY,
     username VARCHAR(255),
@@ -62,7 +63,7 @@ CREATE TABLE srs (
     state INT,
     last_review DATETIME
 );
-CREATE TABLE session (
+CREATE TABLE deck_session (
     deck_id INT PRIMARY KEY REFERENCES decks(deck_id),
     new_cards_remaining INT,
     timezone VARCHAR(50),
@@ -76,4 +77,9 @@ CREATE TABLE jpdb (
     jp_sentence VARCHAR(255),
     en_sentence VARCHAR(255),
     pitchaccent VARCHAR(255)
+);
+CREATE TABLE user_session (
+    user_id INT PRIMARY KEY REFERENCES users(user_id) ,
+    sid VARCHAR(20),
+    expires DATETIME
 );
