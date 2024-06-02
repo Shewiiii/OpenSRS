@@ -15,7 +15,7 @@ app = Flask(__name__)
 app.config.from_object(Config)
 
 t = Thread(target=update_users)
-t.start()
+# t.start()
 
 @app.route('/')
 def index():
@@ -283,7 +283,10 @@ def review(deck_id):
         card = get_card_from_card_id(card_id)
 
     # ajoute des stats: get_stats(due_cards_srs)
-    stats = get_review_stats_from_deckid(deck_id)
+    stats = get_review_stats_from_deckid(
+        deck_id=deck_id,
+        new_cards_limit=new_cards_remaining,
+    )
     new_cards_remaining = stats['new']
     review_cards_remaining = stats['review']
 

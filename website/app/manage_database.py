@@ -237,6 +237,7 @@ def delete_deck(
     db.query(f"DELETE FROM {srs_table} WHERE deck_id = %s;",
              (deck_id, ))
     delete_image(deck_id)
+    end_session(deck_id)
 
 
 def create_card(
@@ -346,12 +347,12 @@ def delete_card(
 ) -> None:
     '''Supprime toutes les cartes d'un deck donné.
     '''
-    db.query(f"DELETE FROM {card_table}"
+    db.query(f"DELETE FROM {card_table} "
              "WHERE card_id = %s;", (card_id, ))
-    db.query(f"DELETE FROM {review_table}"
+    db.query(f"DELETE FROM {review_table} "
              "WHERE card_id = %s;", (card_id, ))
-    db.query(f"DELETE FROM {srs_table}"
-             "WHERE card_id = %s;", (card_id, ))
+    db.query(f"DELETE FROM {srs_table} "
+             "WHERE card_id = %s; ", (card_id, ))
 
 
 def delete_all_cards(table: str = Constants.cards_table) -> None:
@@ -922,7 +923,7 @@ def get_cards_srs_from_deck_id(
     for card in result:
         card_dict = {
             'card_id': card[0],
-            'deck_is': card[1],
+            'deck_id': card[1],
             'user_id': card[2],
             'due': card[3],
             'stability': card[4],
@@ -1067,7 +1068,7 @@ def session_expired(
     '''Retourne si la session d'un deck a expiré.
     '''
     cursor = db.query(f"SELECT expires, timezone FROM {table} "
-                      f"WHERE deck_id = %s;",
+                      "WHERE deck_id = %s;",
                       (deck_id,))
     result = cursor.fetchall()
     assert len(result) != 0, "Le deck n'a pas été initialisé."
@@ -1103,7 +1104,7 @@ def end_session(
     deck_id: int,
     table: str = Constants.deck_session_table,
 ) -> None:
-    db.query(f"DELETE FROM {table} WHERE deck_id = %", (deck_id,))
+    db.query(f"DELETE FROM {table} WHERE deck_id = %s", (deck_id,))
 
 
 def get_new_cards_remaining(
@@ -1131,7 +1132,7 @@ def decrease_new_cards_remaining(
     '''Change le nombre de cartes restantes pour un deck et utilisateur donné.
     '''
     db.query(
-        f"UPDATE {table}"
+        f"UPDATE {table} "
         "SET new_cards_remaining = new_cards_remaining - %s "
         "WHERE deck_id = %s;",
         (number, deck_id)
