@@ -1,9 +1,5 @@
 import json
 
-filename = '15-05-24 review history'
-inputRepo = 'jpdb'
-outputRepo = 'converted'
-data = json.load(open(f"{inputRepo}/{filename}.json","r",encoding="UTF-8"))
 
 '''Json schema:
 
@@ -42,25 +38,41 @@ Save graphs?: y
 '''
 
 
-ratings = {'fail':1,'nothing':1,'something':1,'hard':2,'okay':3,'easy':4}
+ratings = {'fail': 1, 'nothing': 1, 'something': 1,
+           'hard': 2, 'okay': 3, 'easy': 4}
 
-tout = "card_id,review_time,review_rating,review_state,review_duration\n"
 
-word_count = len(data["cards_vocabulary_jp_en"])
-review_count = 0
+def jpdb_to_csv(
+    filename: str,
+    input_repo: str = 'jpdb',
+    output_repo: str = 'converted',
+) -> None:
+    '''Convert jpdb reviews into a csv file.
+    '''
+    ratings = {'fail': 1, 'nothing': 1, 'something': 1,
+           'hard': 2, 'okay': 3, 'easy': 4}
+    labels = ("card_id,review_time,review_rating"
+              ",review_state,review_duration\n")
+    data = json.load(
+        open(f"{input_repo}/{filename}.json", "r", encoding="UTF-8")
+    )
+    word_count = len(data["cards_vocabulary_jp_en"])
+    review_count = 0
 
-for reviewNumber in range(word_count):
-    id = data["cards_vocabulary_jp_en"][reviewNumber]["vid"]
-    data_mot = data["cards_vocabulary_jp_en"][reviewNumber]["reviews"]
-    for review in data_mot:
-        try:
-            string = f"{id},{review["timestamp"]}000,{ratings[review["grade"]]},{0},{5}"
-            tout = tout + string + "\n"
-            review_count += 1
-            if review_count%5000 == 0:
-                print(f'{review_count} reviews analysées...')
-        except Exception as e:
-            print(e)
+    for reviewNumber in range(word_count):
+        id = data["cards_vocabulary_jp_en"][reviewNumber]["vid"]
+        data_mot = data["cards_vocabulary_jp_en"][reviewNumber]["reviews"]
+        for review in data_mot:
+            try:
+                string = f"{id},{review["timestamp"]}000,{
+                    ratings[review["grade"]]},{0},{5}"
+                labels = labels + string + "\n"
+                review_count += 1
+                if review_count % 5000 == 0:
+                    print(f'{review_count} reviews analysées...')
+            except Exception as e:
+                print(e)
 
-open(f"{outputRepo}/{filename}.csv","w+",encoding="UTF-8").write(tout)
-print(f'Fini ! {word_count} mots analysés, avec un total de {review_count} reviews effectuées')
+    open(f"{output_repo}/{filename}.csv", "w+", encoding="UTF-8").write(labels)
+    print(f'Fini ! {word_count} mots analysés, avec un total de'
+          f'{review_count} reviews effectuées')
