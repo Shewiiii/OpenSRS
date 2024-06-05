@@ -21,14 +21,19 @@
                 {% endif %}
                 <form method="post"> 
                     <label for="username">Identifiant</label> 
-                    <input class="cardform" type="text" name="username" id="username" required/>  
-                    <br> 
-                    <br> 
+                    <input class="cardform" type="text" name="username" required/>  
                     <label for="password">Mot de passe</label> 
-                    <input class="cardform" type="text" name="password" id="password" required/>  
-                    <br> 
-                    <br> 
-                    <input class="bouton creerbouton bouton1" type="submit" name="submit" id="submit" value="Se connecter"/>  
+                    <input class="cardform" type="password" name="password" required/>  
+                    {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                    <ul>
+                        {% for message in messages %}
+                        <li style="color: var(--clear-red);">{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                    {% endwith %}
+                    <input class="bouton creerbouton bouton1" type="submit" name="submit" id="submit" value="Se connecter"/>
                 </form> 
             </div>
         </div>

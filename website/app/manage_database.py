@@ -1171,20 +1171,31 @@ def init_user(
        Retourne le sid de ce dernier.
     '''
     sid = ''
-    for i in range(20):
+    for _ in range(20):
         r = choice([randint(48, 57), randint(65, 90), randint(97, 122)])
         sid += chr(r)
 
     expires = pendulum.now().add(days=days)
-    db.query(f"INSERT INTO {table} VALUES "
-             "(%s,%s,%s)", (user_id, sid, expires))
+    # Check si le mec est pas déjà dans la table
+    cursor = db.query(
+        f"SELECT user_id FROM {table} WHERE user_id = %s",
+        (user_id,)
+    )
+    result = cursor.fetchall()
 
+    if len(result) == 0:
+        db.query(f"INSERT INTO {table} VALUES "
+                 "(%s,%s,%s)", (user_id, sid, expires))
+    else:
+        db.query(f"UPDATE {table} SET sid = %, expires = %s"
+                 "WHERE user_id = %s",
+                 (sid, expires, user_id))
     return sid
 
 
 def update_users(
     table: str = Constants.user_session_table,
-    cooldown: int = 30,
+    cooldown: int = 300,
 ) -> None:
     '''Vérifie que les sessions actives sont toujours valides.
     '''

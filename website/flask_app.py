@@ -345,9 +345,9 @@ def login():
             return response
 
         else:
-            msg = 'username ou mot de passe incorrect'
+            flash('Identifiant ou mot de passe incorrect.')
 
-    return render_template('login.html', title='Connexion'+msg, msg=msg)
+    return render_template('login.html', title='Connection')
 
 
 @app.route('/logout')
