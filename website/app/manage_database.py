@@ -1235,3 +1235,20 @@ def get_user_id(
     else:
         sid = result[0][0]
         return sid
+
+def check_user_exist(
+        username : str,
+        password : str,
+        email : str,
+        table : str = Constants.users_table
+) -> bool:
+    cursor = db.query(
+        f"SELECT * FROM {table} WHERE username = (%s) OR email = (%s)",
+        (username,email,)
+    )
+    result = cursor.fetchall()
+
+    if len(result) == 0:
+        return False
+    else: 
+        return True

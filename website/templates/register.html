@@ -17,17 +17,30 @@
             <div class="zone">
                 <h3>Créer votre compte !</h3>
                 <form method="post"> 
-                    <label for="pseudo">Identifiant</label> 
-                    <input class="cardform" type="text" name="pseudo" id="pseudo" required/>  
+                    <label for="username">Identifiant</label> 
+                    <input class="cardform" type="text" name="username" id="username"/>
+                    {% if form.back.errors == ['This field is required.'] %}
+                    <span style="color: red;">Veuillez remplir ce champ</span>
+                    {% endif %}  
                     <br> 
                     <br> 
                     <label for="password">Mot de passe</label> 
-                    <input class="cardform" type="text" name="password" id="password" required/>  
+                    <input class="cardform" type="text" name="password" id="password" />
+                    {% if form.back.errors == ['This field is required.'] %}
+                    <span style="color: red;">Veuillez remplir ce champ</span>
+                    {% endif %}
                     <br> 
                     <br>
                     <label for="email">Adresse mail</label> 
-                    <input class="cardform" type="text" name="email" id="email" required/>
+                    <input class="cardform" type="text" name="email" id="email" />
+                    {% if form.back.errors == ['This field is required.'] %}
+                    <span style="color: red;">Veuillez remplir ce champ</span>
+                    {% endif %}
                     <br>
+                    <br>
+                    {% if not_new == True%}
+                    <span style="color: red;">Nom d'utilisateur ou email déjà utilisé</span>
+                    {% endif %}
                     <br>
                     <input class="bouton on bouton1" type="submit" name="submit" id="submit" value="Créer"/>  
                 </form> 

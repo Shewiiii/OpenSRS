@@ -316,7 +316,6 @@ def rate(deck_id, card_id, rating):
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    msg = 'bouh'
     print(request.form)
     if request.method == 'POST' and 'username' in request.form and 'password' in request.form:
         username = request.form['username']
@@ -361,37 +360,22 @@ def logout():
 
     return redirect('/login')
 
-# @app.route('/register')
-# def register():
-#     msg = ''
-#     if request.method == 'POST' and 'username' in request.form and 'password' in request.form and 'email' in request.form:
-#         username = request.form['username']
-#         password = request.form['password']
-#         email = request.form['email']
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST' and 'username' in request.form and 'password' in request.form and 'email' in request.form:
+        username = request.form['username']
+        password = request.form['password']
+        email = request.form['email']
 
-#         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-#         cursor.execute('SELECT * FROM cards WHERE username = %s', (username,))
-#         account = cursor.fetchone()
+        if not check_user_exist(username, password, email):
+            add_login(username, email, password)
+            return redirect('/login')
+        
+        else : 
+            return render_template('register.html', title='Création de compte', not_new = True)
 
-#         if account:
-#             msg = 'Compte déjà existant'
-#         elif not re.match(r'[^@]+@[^@]+\.[^@]+', email):
-#             msg = 'Adresse mail invalide'
-#         elif not re.match(r'[A-Za-z0-9]+', username):
-#             msg = "L'identifiant ne comptenir que des lettres et des nombres"
-#         elif not username or not password or not email:
-#             msg = 'Veuillez remplir les champs manquants'
-#         else:
-#             '''hash = password + app.secret_key
-#             hash = hashlib.sha1(hash.encode())
-#             password = hash.hexdigest()'''
-#             cursor.execute('INSERT INTO accounts VALUES (NULL, %s, %s, %s)', (username, password, email,))
-#             mysql.connection.commit()
-#             msg = 'Compte crée avec succès !'
-#     elif request.method == 'POST':
-#         msg = 'Veuillez remplir les champs manquants'
 
-#     return render_template('/', msg=msg)
+    return render_template('register.html', title='Création de compte', not_new = False)
 
 
 if __name__ == "__main__":  # toujours à la fin!
