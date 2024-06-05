@@ -15,34 +15,22 @@
     <div class="centrer">
         <div id="pageform" class="hero" style="margin: 0;">
             <div class="zone">
-                <h3>Créer votre compte !</h3>
+                <h3 class="nomargintop nomarginbot">Créer un compte</h3>
                 <form method="post"> 
                     <label for="username">Identifiant</label> 
-                    <input class="cardform" type="text" name="username" id="username"/>
-                    {% if form.back.errors == ['This field is required.'] %}
-                    <span style="color: red;">Veuillez remplir ce champ</span>
-                    {% endif %}  
-                    <br> 
-                    <br> 
+                    <input class="cardform" type="text" name="username" required/>  
                     <label for="password">Mot de passe</label> 
-                    <input class="cardform" type="text" name="password" id="password" />
-                    {% if form.back.errors == ['This field is required.'] %}
-                    <span style="color: red;">Veuillez remplir ce champ</span>
+                    <input class="cardform" type="password" name="password" required/>  
+                    {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                    <ul>
+                        {% for message in messages %}
+                        <li style="color: var(--clear-red);">{{ message }}</li>
+                        {% endfor %}
+                    </ul>
                     {% endif %}
-                    <br> 
-                    <br>
-                    <label for="email">Adresse mail</label> 
-                    <input class="cardform" type="text" name="email" id="email" />
-                    {% if form.back.errors == ['This field is required.'] %}
-                    <span style="color: red;">Veuillez remplir ce champ</span>
-                    {% endif %}
-                    <br>
-                    <br>
-                    {% if not_new == True%}
-                    <span style="color: red;">Nom d'utilisateur ou email déjà utilisé</span>
-                    {% endif %}
-                    <br>
-                    <input class="bouton on bouton1" type="submit" name="submit" id="submit" value="Créer"/>  
+                    {% endwith %}
+                    <input class="bouton creerbouton bouton1" type="submit" name="submit" id="submit" value="Se connecter"/>
                 </form> 
             </div>
         </div>
@@ -59,6 +47,5 @@
         }, 200)
     }
 </script>
-
 
 {% endblock %}

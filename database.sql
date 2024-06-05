@@ -10,7 +10,6 @@ DROP TABLE user_session;
 CREATE TABLE users (
     user_id INT NOT NULL PRIMARY KEY,
     username VARCHAR(255),
-    email VARCHAR(255),
     password VARCHAR(255),
     created DATETIME
 );

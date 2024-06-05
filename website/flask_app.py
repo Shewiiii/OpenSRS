@@ -17,6 +17,7 @@ app.config.from_object(Config)
 t = Thread(target=update_users)
 # t.start()
 
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -316,21 +317,17 @@ def rate(deck_id, card_id, rating):
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    print(request.form)
-    if request.method == 'POST' and 'username' in request.form and 'password' in request.form:
+    if request.method == 'POST':
+        
         username = request.form['username']
         password = request.form['password']
-        """ hash = password + app.secret_key
-        hash = hashlib.sha1(hash.encode()) # encode le password
-        password = hash.hexdigest()"""
-
         user_id = test_login(username, password)
         # None si connection échouée, user_id sinon
 
         if user_id != None:
             # Générer un SID
             sid = init_user(user_id)
-            
+
             response = make_response(redirect('/decklist'))
             response.set_cookie('SID', sid,
                                 expires=datetime.now() + timedelta(days=30))
@@ -353,29 +350,25 @@ def login():
 def logout():
     response = make_response(redirect('/login'))
 
-    response.set_cookie('USER_ID', '', expires=0)
-    response.set_cookie('CONNECTED', '', expires=0)
-    response.set_cookie('USERNAME', '', expires=0)
-    response.set_cookie('PASSWORD', '', expires=0)
+    response.set_cookie('SID', '', expires=0)
+    return response
 
-    return redirect('/login')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if request.method == 'POST' and 'username' in request.form and 'password' in request.form and 'email' in request.form:
+    if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        email = request.form['email']
 
-        if not check_user_exist(username, password, email):
-            add_login(username, email, password)
+        if user_exists(username):
+            flash("Nom d'utilisateur ou email déjà utilisé")
+
+        else:
+            add_login(username, password)
+            flash("Compte créé ! Vous pouvez maintenant vous connecter.")
             return redirect('/login')
-        
-        else : 
-            return render_template('register.html', title='Création de compte', not_new = True)
 
-
-    return render_template('register.html', title='Création de compte', not_new = False)
+    return render_template('register.html', title='Créer un compte', not_new=False)
 
 
 if __name__ == "__main__":  # toujours à la fin!

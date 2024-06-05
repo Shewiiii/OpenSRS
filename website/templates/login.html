@@ -16,9 +16,6 @@
         <div id="pageform" class="hero" style="margin: 0;">
             <div class="zone">
                 <h3 class="nomargintop nomarginbot">Se connecter</h3>
-                {% if msg == 'Identifiant ou mot de passe incorrect' %}
-                <p>Identifiant ou mot de passe incorrecte</p>
-                {% endif %}
                 <form method="post"> 
                     <label for="username">Identifiant</label> 
                     <input class="cardform" type="text" name="username" required/>  
@@ -28,7 +25,11 @@
                     {% if messages %}
                     <ul>
                         {% for message in messages %}
+                        {% if message == "Compte créé ! Vous pouvez maintenant vous connecter." %}
+                        <li style="color: var(--green);">{{ message }}</li>
+                        {% else %}
                         <li style="color: var(--clear-red);">{{ message }}</li>
+                        {% endif %}
                         {% endfor %}
                     </ul>
                     {% endif %}

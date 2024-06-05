@@ -1141,7 +1141,6 @@ def decrease_new_cards_remaining(
 
 def add_login(
     username: str,
-    email: str,
     password: str,
     table: str = Constants.users_table
 ) -> int:
@@ -1150,11 +1149,10 @@ def add_login(
     created = datetime.now()
     user_id = get_free_id(table=table)
     sql = (f"INSERT INTO {table} "
-           f"VALUES (%s,%s,%s,%s,%s);")
+           f"VALUES (%s,%s,%s,%s);")
     db.query(sql, (
         user_id,
         username,
-        email,
         password,
         created,
     )
@@ -1187,7 +1185,7 @@ def init_user(
         db.query(f"INSERT INTO {table} VALUES "
                  "(%s,%s,%s)", (user_id, sid, expires))
     else:
-        db.query(f"UPDATE {table} SET sid = %, expires = %s"
+        db.query(f"UPDATE {table} SET sid = %s, expires = %s "
                  "WHERE user_id = %s",
                  (sid, expires, user_id))
     return sid
@@ -1236,19 +1234,15 @@ def get_user_id(
         sid = result[0][0]
         return sid
 
-def check_user_exist(
-        username : str,
-        password : str,
-        email : str,
-        table : str = Constants.users_table
+
+def user_exists(
+        username: str,
+        table: str = Constants.users_table,
 ) -> bool:
     cursor = db.query(
-        f"SELECT * FROM {table} WHERE username = (%s) OR email = (%s)",
-        (username,email,)
+        f"SELECT * FROM {table} WHERE username = %s;",
+        (username,)
     )
     result = cursor.fetchall()
 
-    if len(result) == 0:
-        return False
-    else: 
-        return True
+    return len(result) != 0
