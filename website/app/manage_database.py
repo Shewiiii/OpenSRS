@@ -23,12 +23,13 @@ class DB:
             password=Trucs.mdp,
             database='cards')
 
-    def query(self,
-              sql: str,
-              params: tuple | None = None,
-              debug: bool = False,
-              many: bool = False,
-              ):
+    def query(
+        self,
+        sql: str,
+        params: tuple | None = None,
+        debug: bool = False,
+        many: bool = False,
+    ):
         if debug:
             print(sql)
             print(params)
@@ -559,6 +560,7 @@ def get_deck_from_id(
         # garde les infos du deck dans une variable
         deck_infos = {
             'deck_id': firstRow[0],
+            'user_id': firstRow[1],
             'name': firstRow[2],
             'description': firstRow[3],
             'created': firstRow[4],

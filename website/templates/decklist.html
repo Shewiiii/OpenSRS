@@ -3,7 +3,10 @@
 
 {% block body%}
 <p>Voici la liste de tous les decks que vous avez.</p>
-<a class="bouton bouton1" onclick="redirection('/addDeck')">Créer un deck</a>
+<div style="display: flex;flex-direction: row;gap: 20px;">
+    <a class="bouton bouton1" onclick="redirection('/addDeck')">Créer un deck</a>
+    <a class="bouton bouton2" onclick="redirection('/logout')">Se déconnecter</a>
+</div>
 <div style="padding-top: 100px"></div>
 <div class="decklist">
     {% if decks|length == 0 %}

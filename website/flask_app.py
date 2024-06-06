@@ -18,19 +18,38 @@ t = Thread(target=update_users)
 # t.start()
 
 
+def legit(request, user_id):
+    '''Vérifie qu'il s'agit du propriétaire du deck qui cherche à l'accéder.
+    '''
+    sid = request.cookies.get('SID')
+    c_user_id = get_user_id(sid)
+    
+    return c_user_id == user_id
+
+
 @app.route('/')
 def index():
+    
+    sid = request.cookies.get('SID')
+    if sid:
+        return redirect('/decklist')
     return render_template('index.html')
 
 
 @app.route('/home/<name>')
 def home(name):
+    
     return render_template('home.html', name=name)
 
 
 @app.route('/decklist')
 def decklist():
-    decks = get_decks_from_user(user_id=1)
+    
+    sid = request.cookies.get('SID')
+    if not sid:
+        return redirect('/')
+    user_id = get_user_id(sid)
+    decks = get_decks_from_user(user_id=user_id)
     '''Exemple:
     [{
         'deck_id': 0,
@@ -51,6 +70,7 @@ def decklist():
 
 @app.route('/deck/<deck_id>')
 def deck_page(deck_id):
+
     # Gestion des pages:
     page = request.args.get('page', type=int)
     if page == None:
@@ -66,14 +86,17 @@ def deck_page(deck_id):
     if search == None:
         search = ''
 
-    deckInfo, cards = get_deck_from_id(
+    deck_info, cards = get_deck_from_id(
         deck_id,
         show=50,
         offset=offset,
         search=search,
     )
 
-    page_count = deckInfo['card_count']//50+1
+    if not legit(request, deck_info['user_id']):
+        return "Qu'essayes-tu de faire ? :)"
+
+    page_count = deck_info['card_count']//50+1
 
     '''Exemple de deck:
     ({'deck_id': 0,
@@ -100,8 +123,8 @@ def deck_page(deck_id):
 
     return render_template(
         'deck.html',
-        title=deckInfo['name'],
-        deckInfo=deckInfo,
+        title=deck_info['name'],
+        deck_info=deck_info,
         cards=cards,
         img_id=img_id,
         extension=extension,
@@ -115,10 +138,14 @@ def deck_page(deck_id):
 
 @app.route('/deck/<deck_id>/settings', methods=['GET', 'POST'])
 def deck_settings(deck_id):
+    
     deck_id = int(deck_id)
-
     form = Decksettings()
-    deck = get_deck_from_id(deck_id, show=0)[0]
+    deck = get_deck_from_id(deck_id, show=1)[0]
+
+    if not legit(request, deck['user_id']):
+        return 'Nope'
+
     name = deck['name']
     description = deck['description']
     params = eval(deck['params'])
@@ -133,7 +160,8 @@ def deck_settings(deck_id):
         u_params = eval(d['params'])
         u_retention = float(d['retention'])
 
-        if params != u_params or retention != u_retention:
+        if (params != u_params 
+            or retention != u_retention):
 
             params = u_params
             retention = u_retention
@@ -169,8 +197,15 @@ def deck_settings(deck_id):
 
 @app.route('/deck/<deck_id>/add', methods=['GET', 'POST'])
 def cardform(deck_id):
+    
     form = Cardform()
-    name = get_deck_from_id(deck_id, show=0)[0]['name']
+    deck = get_deck_from_id(deck_id, show=0)[0]
+    
+    user_id = get_user_id(request.cookies.get('sid'))
+    if not legit(request, deck['user_id']):
+        return 'Nope'
+
+    name = deck['name']
 
     if form.validate_on_submit():
         front = form.front.data
@@ -189,7 +224,7 @@ def cardform(deck_id):
             back_sub,
             back_sub2,
             tag,
-            user_id=1,
+            user_id=user_id,
         )
         flash(f'La carte {front} a bien été enregistré dans le deck {name} !')
 
@@ -206,7 +241,12 @@ def cardform(deck_id):
 
 @app.route('/deck/<deck_id>/delete')
 def delete(deck_id):
-    name = get_deck_from_id(deck_id, show=0)[0]['name']
+    
+    deck = get_deck_from_id(deck_id, show=0)[0]
+    if not legit(request, deck['user_id']):
+        return 'Nope'
+    
+    name = deck['name']
 
     return render_template(
         'deleteDeck.html',
@@ -217,6 +257,11 @@ def delete(deck_id):
 
 @app.route('/deck/<deck_id>/delete/confirm', methods=['GET', 'POST'])
 def confirm_delete(deck_id):
+    
+    deck = get_deck_from_id(deck_id, show=0)[0]
+    if not legit(request, deck['user_id']):
+        return 'Nope'
+    
     delete_deck(deck_id)
     response = make_response(redirect('/decklist'))
     response.set_cookie(f'NEW_CARDS_COUNT{deck_id}', '', expires=0)
@@ -226,12 +271,18 @@ def confirm_delete(deck_id):
 
 @app.route('/addDeck', methods=['GET', 'POST'])
 def deckform():
+    
+    sid = request.cookies.get('SID')
+    user_id = get_user_id(sid)
+
     form = Deckform()
     if form.validate_on_submit():
         name = form.name.data
         description = form.description.data
 
-        create_deck(name=name, description=description)
+        create_deck(name=name,
+                    description=description,
+                    user_id=user_id)
         return redirect('/decklist')
 
     return render_template(
@@ -242,7 +293,9 @@ def deckform():
 
 @app.route('/deck/<deck_id>', methods=['GET', 'POST'])
 def changeImg(deck_id):
+    
     if request.method == 'POST':
+        
         f = request.files['image']
         filename = f.filename
         extension = os.path.splitext(filename)[1]
@@ -265,6 +318,7 @@ def deleteCard(card_id, deck_id):
 
 @app.route('/deck/<deck_id>/review')
 def review(deck_id):
+    
     # gère limite de nouvelles cartes:
     refresh_deck_session(deck_id)
     new_cards_remaining = get_new_cards_remaining(deck_id)
@@ -304,8 +358,16 @@ def review(deck_id):
 
 @app.route('/deck/<deck_id>/review/<card_id>/<rating>')
 def rate(deck_id, card_id, rating):
+    
+    user_id = get_user_id(request.cookies.get('SID'))
+    
     rating = Constants.rating_dict[rating]
-    state = rate_card(card_id, deck_id, Constants.temp_user_id, rating)
+    state = rate_card(
+        card_id,
+        deck_id,
+        user_id,
+        rating,
+    )
 
     if state == State.New:
         new_cards_remaining = get_new_cards_remaining(deck_id)
@@ -318,7 +380,7 @@ def rate(deck_id, card_id, rating):
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        
+
         username = request.form['username']
         password = request.form['password']
         user_id = test_login(username, password)
@@ -348,6 +410,7 @@ def login():
 
 @app.route('/logout')
 def logout():
+    
     response = make_response(redirect('/login'))
 
     response.set_cookie('SID', '', expires=0)
@@ -356,6 +419,7 @@ def logout():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
